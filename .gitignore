@@ -3,3 +3,5 @@ videos/
 videos_cropped/
 Videos.zip
 
+# Database files
+database/
