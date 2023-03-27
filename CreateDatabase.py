@@ -2,8 +2,10 @@ import os
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import shutil
 
 database_path = "database/signatures/"
+sign_types = ["colorhists"]
 
 def signColorhists(video_path):
     print(video_path)
@@ -22,34 +24,44 @@ def signColorhists(video_path):
         avg_hists += hist
         i += 1
     avg_hists /= i
-    #plt.plot(avg_hists)
-    #plt.title(str(i / fps))
-    #plt.show()
     return avg_hists
 
+
+# the keys correspond to the folder names
 sign_methods = {
     "colorhists": signColorhists
 }
 
-def createDirectories(videos_folder):
+def createDirectories(videos_folder, cropped_videos=False):
+    # clean the previous database
+    #shutil.rmtree("database/signatures")
+    #os.makedirs("database/signatures")
+
     videos = os.listdir(videos_folder)
-    sign_types = os.listdir(database_path)
-    for sign_type in sign_types:
-        for video in videos:
-            data_path = database_path + sign_type + "/" + video[:-4]
+    for video in videos:
+        for sign_type in sign_types:
+            if not os.path.exists(database_path + sign_type):
+                os.makedirs(database_path + sign_type)
+
+            if cropped_videos:
+                spl = video.split("_from_")
+                video_name = spl[0]
+                segment_name = spl[1][:-5]
+            else:
+                video_name = video[:-4]
+                segment_name = "full"
+
+            data_path = database_path + sign_type + "/" + video_name
             if not os.path.exists(data_path):
                 os.makedirs(data_path)
 
             video_path = videos_folder + video
             signature = sign_methods[sign_type](video_path)
 
-            f = open(data_path + "/full.txt", "w")
+            f = open(data_path + "/" + segment_name + ".txt", "w")
             f.write(np.array_str(signature))
             f.close()
-            #x = 1/0
-            #print(x)
-
-
 
 
 createDirectories("./videos/")
+createDirectories("./videos_cropped/", True)
