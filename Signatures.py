@@ -1,38 +1,18 @@
 import cv2
 import numpy as np
 
-sign_methods = {
-    "colorhists": signColorhists,
-    "mfccs": mfccs,
-    "temporal_diff": temporal_difference,
-    "audio_powers": audio_signal_power
-}
-
-
-def signColorhists(video_path):
-    print(video_path)
-    cap = cv2.VideoCapture(video_path)
-    ret = True
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    i = 0
+def signColorhists(video, path = True):
+    if path:
+        video = get_video_frames(video)
     avg_hists = np.zeros(256)
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-
+    for frame in video:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         hist = np.bincount(gray.flatten(), None, 256)
         avg_hists += hist
-        i += 1
-    avg_hists /= i
+
+    avg_hists /= len(video)
     return avg_hists
 
-
-# the keys correspond to the folder names
-sign_methods = {
-    "colorhists": signColorhists
-}
 
 def mfccs(audio_path='./videos/BlackKnight.wav'):
     audio, sample_rate = librosa.load(audio_path)
@@ -62,11 +42,12 @@ def temporal_diff_frames(frame, prev_frame):
     return diff
 
 
-def temporal_difference(video_path):
+def temporal_difference(video, path = True):
     out = []
-    frames = get_video_frames(video_path)
-    for i in range(len(frames) - 1):
-        out.append(temporal_diff_frames(frames[i+1], frames[i]))
+    if path:
+        video = get_video_frames(video)
+    for i in range(len(video) - 1):
+        out.append(temporal_diff_frames(video[i+1], video[i]))
     return np.array(out)
 
 
@@ -91,3 +72,11 @@ def audio_signal_power(audiopath):
         i += int(T)
 
     return np.array(out)
+
+
+sign_methods = {
+    "colorhists": signColorhists,
+    "temporal_diff": temporal_difference,
+    "mfccs": mfccs,
+    "audio_powers": audio_signal_power
+}

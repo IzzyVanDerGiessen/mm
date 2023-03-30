@@ -1,6 +1,6 @@
 import Database
 import os
-from Signatures import signColorhists
+from Signatures import *
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
@@ -12,49 +12,60 @@ def query(video_path):
     """
     start = time.time()
 
-    frames = getVideoFrames(video_path)
+    frames = get_video_frames(video_path)
     fps = get_fps(video_path)
 
-    query_colorhist = colorhist(frames)
+    all_best = {}
+    for sign_method_name in sign_methods[:2]:
+        sign_method = sign_methods[sign_method_name]
+        query_sign = sign_method(frames, False)
 
-    results = {}
-    videos = os.listdir(Database.FULL_VIDEOS_PATH)
-    for video in videos:
-        print(video)
-        y = []
-        test_len = vid_len(Database.FULL_VIDEOS_PATH + video)
-        test_fps = get_fps(Database.FULL_VIDEOS_PATH + video)
+        results = {}
+        videos = os.listdir(Database.FULL_VIDEOS_PATH)
+        for video in videos:
+            print(video)
+            y = []
+            test_len = vid_len(Database.FULL_VIDEOS_PATH + video)
+            test_fps = get_fps(Database.FULL_VIDEOS_PATH + video)
 
-        if test_fps == 0:
-            continue
+            if test_fps == 0:
+                continue
 
-        # step size in frames
-        step_size = int((len(frames) / fps) * test_fps)
+            # step size in frames
+            step_size = int((len(frames) / fps) * test_fps)
 
-        cap = cv2.VideoCapture(Database.FULL_VIDEOS_PATH + video)
-        for i in range(0, test_len-len(frames), step_size):
-            #print(str(i / step_size) + "/" + str(int((test_len-len(frames))/step_size)))
-            sample = []
-            for j in range(i, i+len(frames)):
-                ret, frame = cap.read()
-                if not ret:
-                    break
+            cap = cv2.VideoCapture(Database.FULL_VIDEOS_PATH + video)
+            for i in range(0, test_len-len(frames), step_size):
+                #print(str(i / step_size) + "/" + str(int((test_len-len(frames))/step_size)))
+                sample = []
+                for j in range(i, i+len(frames)):
+                    ret, frame = cap.read()
+                    if not ret:
+                        break
 
-                sample.append(frame)
+                    sample.append(frame)
 
-            test_colorhist = colorhist(sample)
-            score = np.abs(test_colorhist - query_colorhist).sum()
-            if score == score:
-                y.append((video + ": " + str(i/test_fps) + "-" + str((i+step_size)/test_fps), score))
-            else:
-                print(score)
+                test_sign = sign_method(sample, False)
+                try:
+                    score = np.abs(test_sign - query_sign).sum()
+                except:
+                    continue
+                if score == score:
+                    y.append((video + ": " + str(i/test_fps) + "-" + str((i+step_size)/test_fps), score))
+                else:
+                    print(score)
 
-        results[video] = sorted(y, key=lambda x: x[1])
+            results[video] = sorted(y, key=lambda x: x[1])
 
-    best = []
-    for res in results.keys():
-        best += results[res][:5]
-    print(sorted(best, key=lambda x: x[1])[:5])
+        best = []
+        for res in results.keys():
+            best += results[res][:5]
+        all_best[sign_method_name] = best
+
+    for best in all_best.keys():
+        print(best)
+        print(all_best[best])
+        print("\n")
     print(time.time() - start)
 
 def vid_len(video):
@@ -76,20 +87,6 @@ def euclidean_norm_mean(x,y):
     x = np.mean(x, axis=0)
     y = np.mean(y, axis=0)
     return np.linalg.norm(x-y)
-
-def getVideoFrames(video_path):
-    start = time.time()
-    cap = cv2.VideoCapture(video_path)
-    ret = True
-    frames = []
-    while ret:
-        ret, frame = cap.read()
-        frames.append(frame)
-    cap.release()
-
-    # remove the None at the end
-    frames.pop()
-    return frames
 
 def colorhist2(frames):
     """
