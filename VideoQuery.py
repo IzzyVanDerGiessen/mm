@@ -45,7 +45,7 @@ def query(video_path):
             test_colorhist = colorhist(sample)
             score = np.abs(test_colorhist - query_colorhist).sum()
             if score == score:
-                y.append((str(i/test_fps) + "-" + str((i+step_size)/test_fps), score))
+                y.append((video + ": " + str(i/test_fps) + "-" + str((i+step_size)/test_fps), score))
             else:
                 print(score)
 
