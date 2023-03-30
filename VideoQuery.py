@@ -29,6 +29,8 @@ def brute_force_pipeline(video_path, feature):
     results = {}
     videos = os.listdir(Database.FULL_VIDEOS_PATH)
     for video in videos:
+        if '.wav' in video:
+            continue
         print(video)
         y = []
         test_len = vid_len(Database.FULL_VIDEOS_PATH + video)
@@ -37,9 +39,15 @@ def brute_force_pipeline(video_path, feature):
 
         if test_fps == 0:
             continue
+        
+        
 
-        test_samplerate, test_samples = wav.read(video.split('.mp4')[0] + ".wav")
-        num_samples_per_frame = len(test_samples)//len(test_len)
+        
+        if '.avi' in video: 
+            test_samplerate, test_samples = wav.read(Database.FULL_VIDEOS_PATH + video.split('.avi')[0] + ".wav")
+        else: 
+            test_samplerate, test_samples = wav.read(Database.FULL_VIDEOS_PATH + video.split('.mp4')[0] + ".wav")
+        num_samples_per_frame = len(test_samples) // test_len
 
         # step size in frames
         step_size = int((len(frames) / fps) * test_fps)
@@ -177,7 +185,7 @@ def compute_feature(feature, path = None, data = None, samplerate = None, num_fr
                 if 'BlackKnight' in path:
                     samplerate, samples = wav.read(path.split('.avi')[0] + ".wav")
                 return sign_methods[feature](samplerate, samples, len(frames))
-            if data != None:
+            if type(data) != None:
                 return sign_methods[feature](samplerate, data, num_frames)
                     
             return None # need to figure out how to do audio data
