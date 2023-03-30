@@ -67,13 +67,13 @@ def loadCroppedVideos():
                 cropped_signs[video_name][sign_method].append(compare_sign)
 
 def loadDatabase():
+    print("Start loading database...")
     loadFullVideos()
     loadCroppedVideos()
-
+    print("Done!")
 
 if __name__ == '__main__':
     loadDatabase()
-    print(cropped_signs)
 
     refresh_database = False
     if refresh_database:
