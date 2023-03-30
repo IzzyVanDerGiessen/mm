@@ -1,8 +1,8 @@
 import os
-import cv2
 import numpy as np
 import shutil
 from Signatures import *
+import librosa
 
 
 PATH = "./database/signatures/"
@@ -12,6 +12,8 @@ CROPPED_VIDEOS_PATH = "./videos_cropped/"
 def createDirectories(videos_folder, cropped_videos=False):
     videos = os.listdir(videos_folder)
     for video in videos:
+        if '.wav' in video:
+            continue
         for sign_type in sign_types:
             if not os.path.exists(PATH + sign_type):
                 os.makedirs(PATH + sign_type)
@@ -29,7 +31,38 @@ def createDirectories(videos_folder, cropped_videos=False):
                 os.makedirs(data_path)
 
             video_path = videos_folder + video
-            signature = sign_methods[sign_type](video_path)
+            signature = None
+
+
+            match sign_type:
+                case "colorhists" : 
+
+                    frames = getVideoFrames(video_path)
+                    signature = sign_methods[sign_type](frames)
+
+                case "mfccs":
+
+                    audio, sample_rate = librosa.load(video_path.split('.mp4')[0] + ".wav")
+                    if 'BlackKnight' in video_path:
+                        audio, sample_rate = librosa.load(video_path.split('.avi')[0] + ".wav")
+                    signature = sign_methods[sign_type](audio, sample_rate)
+
+                case "audio_powers":
+
+                    frames = getVideoFrames(video_path)
+                    samplerate, samples = wav.read(video_path.split('.mp4')[0] + ".wav")
+                    if 'BlackKnight' in video_path:
+                        samplerate, samples = wav.read(video_path.split('.avi')[0] + ".wav")
+                    signature = sign_methods[sign_type](samplerate, samples, frames)
+
+                case "temporal_diff":
+
+                    frames = getVideoFrames(video_path)
+                    signature = sign_methods[sign_type](frames)
+
+                case _ :
+                    print("An error in the matching occured :)")
+                    return -1 
 
             f = open(data_path + "/" + segment_name + ".txt", "wb")
             f.write(signature.tobytes())
@@ -73,9 +106,9 @@ def loadDatabase():
     print("Done!")
 
 if __name__ == '__main__':
-    loadDatabase()
+    #loadDatabase()
 
-    refresh_database = False
+    refresh_database = True
     if refresh_database:
         # clean the previous database
         shutil.rmtree("database/signatures")
