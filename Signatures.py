@@ -37,9 +37,9 @@ def colorhist(frames):
 
 
 # the keys correspond to the folder names
-def mfccs(audio, sample_rate):
+def mfccs(audio, samplerate):
     # library implementation, idk what else to use tbh
-    features = librosa.feature.mfcc(y=audio, sr=sample_rate)
+    features = librosa.feature.mfcc(y=audio, sr=samplerate, n_mfcc=13)
     return features
 
 
