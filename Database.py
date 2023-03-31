@@ -94,8 +94,8 @@ def loadCroppedVideos():
         segment_name = spl[1][:-5]
         cropped_signs[video_name] = {}
         for sign_method in sign_methods.keys():
-            sign_file = PATH + sign_method + "/" + video_name + "/" + segment_name + ".txt"
             cropped_signs[video_name][sign_method] = []
+            sign_file = PATH + sign_method + "/" + video_name + "/" + segment_name + ".txt"
             with open(sign_file, "rb") as f:
                 compare_sign_bts = f.read()
                 compare_sign = np.frombuffer(compare_sign_bts)

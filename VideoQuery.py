@@ -36,6 +36,7 @@ def brute_force_pipeline(video_path, feature):
     results = {}
     videos = os.listdir(Database.FULL_VIDEOS_PATH)
 
+
     for video in videos:
         if '.wav' in video:
             continue
@@ -45,7 +46,100 @@ def brute_force_pipeline(video_path, feature):
         test_len = vid_len(Database.FULL_VIDEOS_PATH + video)
         test_fps = get_fps(Database.FULL_VIDEOS_PATH + video)
 
+        if test_fps == 0:
+            continue
 
+        if '.avi' in video:
+            test_samplerate, test_samples = wav.read(Database.FULL_VIDEOS_PATH + video.split('.avi')[0] + ".wav")
+        else:
+            test_samplerate, test_samples = wav.read(Database.FULL_VIDEOS_PATH + video.split('.mp4')[0] + ".wav")
+        num_samples_per_frame = len(test_samples) // test_len
+
+        # step size in frames
+        step_size = int((len(frames) / fps) * test_fps)
+
+        cap = cv2.VideoCapture(Database.FULL_VIDEOS_PATH + video)
+        for i in range(0, test_len-len(frames), step_size):
+            sample = None
+
+            # to extend the implementation for both video and audio
+            if feature in  ["colorhists", "temporal_diff"]:
+                sample = []
+                for j in range(i, i+len(frames)):
+                    ret, frame = cap.read()
+                    if not ret:
+                        break
+
+                    sample.append(frame)
+            elif feature in ["audio_powers", "mfccs"]:
+                sample = test_samples[i:i+num_samples_per_frame].astype('float32')
+
+
+            test_feature = compute_feature(feature, data = sample, samplerate= test_samplerate, num_frames = step_size)
+            lengthLimiter = min(len(test_feature), len(query_feature)) #since sometimes we end up with weird numbers of frames (cuz of end of vid?)
+            score = np.abs(test_feature[:lengthLimiter] - query_feature[:lengthLimiter]).sum()
+            if score == score:
+                y.append((video + ": " + str(i/test_fps) + "-" + str((i+step_size)/test_fps), score))
+            else:
+                print(score)
+
+        results[video] = sorted(y, key=lambda x: x[1])
+
+    best = []
+    for res in results.keys():
+        best += results[res][:5]
+    print("Query Item", "(" + feature +"):", video_path)
+    print(sorted(best, key=lambda x: x[1])[:5])
+    print("Time taken:", time.time() - start, "seconds")
+
+def signature_pipeline(video_path, feature):
+    """
+        The brute force version of the query.
+    """
+    start = time.time()
+
+    frames = getVideoFrames(video_path)
+    fps = get_fps(video_path)
+
+    audio_samplerate, audio_samples = wav.read(video_path.split('.mp4')[0] + ".wav")
+    if 'BlackKnight' in video_path:
+        audio_samplerate, audio_samples = librosa.load(video_path.split('.avi')[0] + ".wav")
+    if feature in  ["colorhists", "temporal_diff"]:
+        query_feature = compute_feature(feature, path = video_path, data = frames)
+    if feature in  ["mfccs", "audio_powers"]:
+        query_feature = compute_feature(feature, path = video_path, data = audio_samples.astype('float32'), samplerate = audio_samplerate)
+
+
+    videos = os.listdir(Database.FULL_VIDEOS_PATH)
+
+    sign_results = {}
+    for video in videos:
+        print(video)
+        if '.wav' in video:
+            continue
+        segments = filter(lambda x: x.startswith(video[:-4]), os.listdir(Database.CROPPED_VIDEOS_PATH))
+        sign_results[video[:-4]] = []
+
+        for segment in segments:
+            test_feature = Database.cropped_signs[video[:-4]][
+            score = np.abs(test_feature - query_feature).sum()
+            if score == score:
+                sign_results[video[:-4]].append(score)
+
+    #sign_res = map(lambda x: (x[0], max(x[1])), sign_results)
+    sign_res = {k: min(v) for k, v in sign_results.items()}
+    print(dict(sorted(sign_res.items(), key = lambda x: x[1])))
+    return None
+
+    results = {}
+    for video in videos:
+        if '.wav' in video:
+            continue
+        print(video)
+
+        y = []
+        test_len = vid_len(Database.FULL_VIDEOS_PATH + video)
+        test_fps = get_fps(Database.FULL_VIDEOS_PATH + video)
 
         if test_fps == 0:
             continue
@@ -76,10 +170,7 @@ def brute_force_pipeline(video_path, feature):
             elif feature in ["audio_powers", "mfccs"]:
                 sample = test_samples[i:i+num_samples_per_frame].astype('float32')
 
-
-
-
-            test_feature = compute_feature(feature, data = sample, samplerate= test_samplerate, num_frames = step_size)
+            test_feature = compute_feature(feature, data = sample, samplerate = test_samplerate, num_frames = step_size)
             lengthLimiter = min(len(test_feature), len(query_feature)) #since sometimes we end up with weird numbers of frames (cuz of end of vid?)
             score = np.abs(test_feature[:lengthLimiter] - query_feature[:lengthLimiter]).sum()
             if score == score:
@@ -95,59 +186,6 @@ def brute_force_pipeline(video_path, feature):
     print("Query Item", "(" + feature +"):", video_path)
     print(sorted(best, key=lambda x: x[1])[:5])
     print("Time taken:", time.time() - start, "seconds")
-
-def signature_pipeline(file_path, feature):
-    return None
-
-    """
-        The brute force version of the query.
-    """
-    start = time.time()
-
-    frames = getVideoFrames(video_path)
-    fps = get_fps(video_path)
-
-    query_colorhist = colorhist(frames)
-
-    results = {}
-    videos = os.listdir(Database.FULL_VIDEOS_PATH)
-    for video in videos:
-        print(video)
-        y = []
-        test_len = vid_len(Database.FULL_VIDEOS_PATH + video)
-        test_fps = get_fps(Database.FULL_VIDEOS_PATH + video)
-
-        if test_fps == 0:
-            continue
-
-        # step size in frames
-        step_size = int((len(frames) / fps) * test_fps)
-
-        cap = cv2.VideoCapture(Database.FULL_VIDEOS_PATH + video)
-        for i in range(0, test_len-len(frames), step_size):
-            #print(str(i / step_size) + "/" + str(int((test_len-len(frames))/step_size)))
-            sample = []
-            for j in range(i, i+len(frames)):
-                ret, frame = cap.read()
-                if not ret:
-                    break
-
-                sample.append(frame)
-
-            test_colorhist = colorhist(sample)
-            score = np.abs(test_colorhist - query_colorhist).sum()
-            if score == score:
-                y.append((video + ": " + str(i/test_fps) + "-" + str((i+step_size)/test_fps), score))
-            else:
-                print(score)
-
-        results[video] = sorted(y, key=lambda x: x[1])
-
-    best = []
-    for res in results.keys():
-        best += results[res][:5]
-    print(sorted(best, key=lambda x: x[1])[:5])
-    print(time.time() - start)
 
 def compute_feature(feature, path = None, data = None, samplerate = None, num_frames = None):
     match feature:
