@@ -14,6 +14,7 @@ def createDirectories(videos_folder, cropped_videos=False):
     for video in videos:
         if '.wav' in video:
             continue
+        print(video)
         for sign_type in sign_types:
             if not os.path.exists(PATH + sign_type):
                 os.makedirs(PATH + sign_type)
@@ -42,18 +43,22 @@ def createDirectories(videos_folder, cropped_videos=False):
 
                 case "mfccs":
 
-                    audio, sample_rate = librosa.load(video_path.split('.mp4')[0] + ".wav")
+                    #audio, sample_rate = librosa.load(video_path.split('.mp4')[0] + ".wav")
                     if 'BlackKnight' in video_path:
                         audio, sample_rate = librosa.load(video_path.split('.avi')[0] + ".wav")
+                    else: 
+                        audio, sample_rate = librosa.load(video_path.split('.mp4')[0] + ".wav")
                     signature = sign_methods[sign_type](audio, sample_rate)
 
                 case "audio_powers":
 
                     frames = getVideoFrames(video_path)
-                    samplerate, samples = wav.read(video_path.split('.mp4')[0] + ".wav")
+                    audio, samplerate = None, None
                     if 'BlackKnight' in video_path:
-                        samplerate, samples = wav.read(video_path.split('.avi')[0] + ".wav")
-                    signature = sign_methods[sign_type](samplerate, samples, frames)
+                        audio, samplerate = librosa.load(video_path.split('.avi')[0] + ".wav")
+                    else: 
+                        audio, samplerate = librosa.load(video_path.split('.mp4')[0] + ".wav")
+                    signature = sign_methods[sign_type](samplerate, audio, len(frames))
 
                 case "temporal_diff":
 
@@ -78,6 +83,8 @@ def loadFullVideos():
         full_signs[video[:-4]] = {}
         for sign_method in sign_methods.keys():
             sign_file = PATH + sign_method + "/" + video[:-4] + "/full.txt"
+
+            
             with open(sign_file, "rb") as f:
                 compare_sign_bts = f.read()
                 compare_sign = np.frombuffer(compare_sign_bts)
@@ -106,7 +113,7 @@ def loadDatabase():
     print("Done!")
 
 if __name__ == '__main__':
-    #loadDatabase()
+   
 
     refresh_database = True
     if refresh_database:
@@ -116,3 +123,5 @@ if __name__ == '__main__':
 
         createDirectories(FULL_VIDEOS_PATH)
         createDirectories(CROPPED_VIDEOS_PATH, True)
+
+     #loadDatabase()

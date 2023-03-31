@@ -40,19 +40,9 @@ def colorhist(frames):
 def mfccs(audio, samplerate):
     # library implementation, idk what else to use tbh
     features = librosa.feature.mfcc(y=audio, sr=samplerate, n_mfcc=13)
+    print(type(features))
     return features
 
-
-def get_video_frames(video_path):
-    cap = cv2.VideoCapture(video_path)
-    images = []
-    while (cap.isOpened()):
-        retVal, frame = cap.read()
-        if retVal == False:
-            break
-        images.append(frame)
-
-    return images
 
 def getVideoFrames(video_path):
     cap = cv2.VideoCapture(video_path)

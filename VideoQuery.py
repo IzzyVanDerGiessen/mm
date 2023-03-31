@@ -99,9 +99,6 @@ def brute_force_pipeline(video_path, feature):
 def signature_pipeline(file_path, feature):
     return None 
 
-
-
-def query(video_path):
     """
         The brute force version of the query.
     """
