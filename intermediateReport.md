@@ -1,3 +1,6 @@
+# Hypothesis 
+Precomputing a subset data can greatly improve on the speed of the video queries without sacrificing a (substantial) amount of accuracy.
+
 # Link between the user perspective and the technical solution
 The biggest convenience of Shazam is the way it can quickly find the source of the audio it is presented no matter at which you point the user starts recording. As a user of Video Shazam, I want to have that speed for the pipeline to be usable. An issue with the video query system from Lab 5 was how slow the feature matching was for an entire video (due to the bruteforce method it used). The team wants to maximize the speedup the pipeline by pre-computing both single- and multimodal signatures and minimize the corresponding decrease in accuracy of the final product. 
 
