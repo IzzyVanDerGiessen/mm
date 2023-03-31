@@ -1,3 +1,5 @@
 pyparsing
 cv2
 numpy
+pims
+moviepy
