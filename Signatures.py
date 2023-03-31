@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import scipy.io.wavfile as wav
 import librosa
+import sys
+import pims
 
 database_path = "database/signatures/"
 sign_types = ["colorhists", "mfccs", "temporal_diff", "audio_powers"]
@@ -40,24 +42,24 @@ def colorhist(frames):
 def mfccs(audio, samplerate):
     # library implementation, idk what else to use tbh
     features = librosa.feature.mfcc(y=audio, sr=samplerate, n_mfcc=13)
-  
+
     return features
 
 
 def getVideoFrames(video_path):
-    cap = cv2.VideoCapture(video_path)
-    ret = True
-    frames = []
-    i = 0
-    while ret:
-        ret, frame = cap.read()
-        frames.append(frame)
-        i += 1
-        print(i)
-    cap.release()
-    print("End of vid!")
-    frames.pop()
-    return frames
+    #cap = cv2.VideoCapture(video_path)
+    #ret = True
+    #frames = []
+    #i = 0
+    #while ret:
+    #    ret, frame = cap.read()
+    #    frames.append(frame)
+    #    i += 1
+    #    print(i)
+    #cap.release()
+    #print("End of vid!")
+    #frames.pop()
+    return pims.Video(video_path)
 
 
 def vid_len(video):
@@ -84,8 +86,13 @@ def temporal_diff_frames(frame, prev_frame):
 
 def temporal_difference(frames):
     out = []
-    for i in range(len(frames) - 1):
-        out.append(temporal_diff_frames(frames[i+1], frames[i]))
+    #for i in range(len(frames) - 1):
+    last = None
+    for frame in frames:
+        if not last:
+            continue
+        out.append(temporal_diff_frames(frame, last))
+        last = frame
     return np.array(out)
 
 
@@ -111,6 +118,3 @@ sign_methods = {
     "temporal_diff": temporal_difference,
     "audio_powers": audio_signal_power
 }
-
-
-
