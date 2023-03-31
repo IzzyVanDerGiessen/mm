@@ -8,25 +8,6 @@ import pims
 database_path = "database/signatures/"
 sign_types = ["colorhists", "mfccs", "temporal_diff", "audio_powers"]
 
-# def signColorhists(video_path):
-#     print(video_path)
-#     cap = cv2.VideoCapture(video_path)
-#     ret = True
-#     fps = cap.get(cv2.CAP_PROP_FPS)
-#     i = 0
-#     avg_hists = np.zeros(256)
-#     while True:
-#         ret, frame = cap.read()
-#         if not ret:
-#             break
-
-#         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-#         hist = np.bincount(gray.flatten(), None, 256)
-#         avg_hists += hist
-#         i += 1
-#     avg_hists /= i
-#     return avg_hists
-
 def colorhist(frames):
 
     avg_hists = np.zeros(256)
@@ -86,7 +67,6 @@ def temporal_diff_frames(frame, prev_frame):
 
 def temporal_difference(frames):
     out = []
-    #for i in range(len(frames) - 1):
     last = None
     for frame in frames:
         if not last:
@@ -111,6 +91,13 @@ def audio_signal_power(samplerate, samples, num_frames):
         i += int(T)
 
     return np.array(out)
+
+def mm_mfcc_colorhist(frames, audio, samplerate):
+    colorhists= colorhist(frames)
+    mfcc = mfccs(audio.astype('float32'), samplerate)
+
+
+    return [colorhists, mfcc]
 
 sign_methods = {
     "colorhists": colorhist,

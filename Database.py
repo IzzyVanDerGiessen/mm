@@ -44,7 +44,7 @@ def createDirectories(videos_folder, cropped_videos=False):
                 case "mfccs":
 
                     #audio, sample_rate = librosa.load(video_path.split('.mp4')[0] + ".wav")
-                    if 'BlackKnight' in video_path:
+                    if '.avi' in video_path:
                         audio, sample_rate = librosa.load(video_path.split('.avi')[0] + ".wav")
                     else:
                         audio, sample_rate = librosa.load(video_path.split('.mp4')[0] + ".wav")
@@ -52,7 +52,7 @@ def createDirectories(videos_folder, cropped_videos=False):
 
                 case "audio_powers":
                     audio, samplerate = None, None
-                    if 'BlackKnight' in video_path:
+                    if '.avi' in video_path:
                         audio, samplerate = librosa.load(video_path.split('.avi')[0] + ".wav")
                     else:
                         audio, samplerate = librosa.load(video_path.split('.mp4')[0] + ".wav")

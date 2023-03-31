@@ -2,10 +2,13 @@ import Database
 import os
 from Signatures import *
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2
 import argparse
 import time
+from Scorer import *
+
+VISUAL_FEATURES = ["colorhists", "temporal_diff"]
+AUDIO_FEATURES = ["audio_powers", "mfccs"]
 
 
 def get_args():
@@ -13,6 +16,7 @@ def get_args():
     parser.add_argument("--filepath", type = str, default = "./videos_cropped/British_Plugs_Are_Better_from_0.0_to_5.0).mp4")
     parser.add_argument("--pipeline", type = str, default = "brute_force")
     parser.add_argument("--feature", type = str, default = "colorhists")
+    parser.add_argument('-features','--list', nargs='+', help='<Required> Set flag', required=True)
     return parser.parse_args()
 
 def brute_force_pipeline(video_path, feature):
@@ -20,12 +24,13 @@ def brute_force_pipeline(video_path, feature):
         The brute force version of the query.
     """
     start = time.time()
-
+    
     frames = getVideoFrames(video_path)
     fps = get_fps(video_path)
 
     audio_samplerate, audio_samples = wav.read(video_path.split('.mp4')[0] + ".wav")
-    if 'BlackKnight' in video_path:
+
+    if '.avi' in video_path:
         audio_samplerate, audio_samples = librosa.load(video_path.split('.avi')[0] + ".wav")
     if feature in  ["colorhists", "temporal_diff"]:
         query_feature = compute_feature(feature, path = video_path, data = frames)
@@ -35,22 +40,18 @@ def brute_force_pipeline(video_path, feature):
     
     results = {}
     videos = os.listdir(Database.FULL_VIDEOS_PATH)
+    videos = filter(lambda x: ('.wav' in x), videos)
 
     for video in videos:
-        if '.wav' in video:
-            continue
         print(video)
         
         y = []
         test_len = vid_len(Database.FULL_VIDEOS_PATH + video)
         test_fps = get_fps(Database.FULL_VIDEOS_PATH + video)
-        
-        
 
         if test_fps == 0:
             continue
-        
-        
+
         if '.avi' in video: 
             test_samplerate, test_samples = wav.read(Database.FULL_VIDEOS_PATH + video.split('.avi')[0] + ".wav")
         else: 
@@ -62,7 +63,9 @@ def brute_force_pipeline(video_path, feature):
 
         cap = cv2.VideoCapture(Database.FULL_VIDEOS_PATH + video)
         for i in range(0, test_len-len(frames), step_size):
-            sample = None
+            samples = []
+
+    
 
             # to extend the implementation for both video and audio
             if feature in  ["colorhists", "temporal_diff"]:
@@ -71,18 +74,15 @@ def brute_force_pipeline(video_path, feature):
                     ret, frame = cap.read()
                     if not ret:
                         break
-
                     sample.append(frame)
             elif feature in ["audio_powers", "mfccs"]: 
                 sample = test_samples[i:i+num_samples_per_frame].astype('float32')
-   
-     
                 
             
             test_feature = compute_feature(feature, data = sample, samplerate= test_samplerate, num_frames = step_size)
-            lengthLimiter = min(len(test_feature), len(query_feature)) #since sometimes we end up with weird numbers of frames (cuz of end of vid?)
-            score = np.abs(test_feature[:lengthLimiter] - query_feature[:lengthLimiter]).sum()
-            if score == score:
+            
+            score = singleFeatureScorer(test_feature, query_feature)
+            if score == score: #check if the number is not a nan 
                 y.append((video + ": " + str(i/test_fps) + "-" + str((i+step_size)/test_fps), score))
             else:
                 print(score)
@@ -99,55 +99,6 @@ def brute_force_pipeline(video_path, feature):
 def signature_pipeline(file_path, feature):
     return None 
 
-    """
-        The brute force version of the query.
-    """
-    start = time.time()
-
-    frames = getVideoFrames(video_path)
-    fps = get_fps(video_path)
-
-    query_colorhist = colorhist(frames)
-
-    results = {}
-    videos = os.listdir(Database.FULL_VIDEOS_PATH)
-    for video in videos:
-        print(video)
-        y = []
-        test_len = vid_len(Database.FULL_VIDEOS_PATH + video)
-        test_fps = get_fps(Database.FULL_VIDEOS_PATH + video)
-
-        if test_fps == 0:
-            continue
-
-        # step size in frames
-        step_size = int((len(frames) / fps) * test_fps)
-
-        cap = cv2.VideoCapture(Database.FULL_VIDEOS_PATH + video)
-        for i in range(0, test_len-len(frames), step_size):
-            #print(str(i / step_size) + "/" + str(int((test_len-len(frames))/step_size)))
-            sample = []
-            for j in range(i, i+len(frames)):
-                ret, frame = cap.read()
-                if not ret:
-                    break
-
-                sample.append(frame)
-
-            test_colorhist = colorhist(sample)
-            score = np.abs(test_colorhist - query_colorhist).sum()
-            if score == score:
-                y.append((video + ": " + str(i/test_fps) + "-" + str((i+step_size)/test_fps), score))
-            else:
-                print(score)
-
-        results[video] = sorted(y, key=lambda x: x[1])
-
-    best = []
-    for res in results.keys():
-        best += results[res][:5]
-    print(sorted(best, key=lambda x: x[1])[:5])
-    print(time.time() - start)
 
 def euclidean_norm_mean(x,y):
     """
@@ -187,7 +138,7 @@ def compute_feature(feature, path = None, data = None, samplerate = None, num_fr
             if path != None: 
                 frames = getVideoFrames(path)
                 samplerate, samples = wav.read(path.split('.mp4')[0] + ".wav")
-                if 'BlackKnight' in path:
+                if '.avi' in path:
                     samplerate, samples = wav.read(path.split('.avi')[0] + ".wav")
                 return sign_methods[feature](samplerate, samples, len(frames))
             if type(data) != None:
@@ -213,10 +164,16 @@ if __name__ == '__main__':
     file_path = args.filepath
     pipeline = args.pipeline
     feature = args.feature
+
+
+    frames = getVideoFrames(file_path)
+    samplerate, audio = wav.read(file_path.split('.mp4')[0] + '.wav')
+
+    #mm_mfcc_colorhist(frames, audio, samplerate)
     
 
-    if pipeline == "brute_force":
-        brute_force_pipeline(file_path, feature)
-    elif pipeline == "signatures":
-        signature_pipeline(file_path, feature)
+    # if pipeline == "brute_force":
+    #     brute_force_pipeline(file_path, feature)
+    # elif pipeline == "signatures":
+    #     signature_pipeline(file_path, feature)
 
