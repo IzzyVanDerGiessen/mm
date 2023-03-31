@@ -1,8 +1,3 @@
----
-author:
-- Izzy van der Giessen, Vasil Dakov
-title: MMA Invention Assignment
----
 
 # Hypothesis {#hypothesis .unnumbered}
 

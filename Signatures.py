@@ -8,25 +8,6 @@ import pims
 database_path = "database/signatures/"
 sign_types = ["colorhists", "mfccs", "temporal_diff", "audio_powers"]
 
-# def signColorhists(video_path):
-#     print(video_path)
-#     cap = cv2.VideoCapture(video_path)
-#     ret = True
-#     fps = cap.get(cv2.CAP_PROP_FPS)
-#     i = 0
-#     avg_hists = np.zeros(256)
-#     while True:
-#         ret, frame = cap.read()
-#         if not ret:
-#             break
-
-#         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-#         hist = np.bincount(gray.flatten(), None, 256)
-#         avg_hists += hist
-#         i += 1
-#     avg_hists /= i
-#     return avg_hists
-
 def colorhist(frames):
 
     avg_hists = np.zeros(256)
@@ -47,18 +28,6 @@ def mfccs(audio, samplerate):
 
 
 def getVideoFrames(video_path):
-    #cap = cv2.VideoCapture(video_path)
-    #ret = True
-    #frames = []
-    #i = 0
-    #while ret:
-    #    ret, frame = cap.read()
-    #    frames.append(frame)
-    #    i += 1
-    #    print(i)
-    #cap.release()
-    #print("End of vid!")
-    #frames.pop()
     return pims.Video(video_path)
 
 

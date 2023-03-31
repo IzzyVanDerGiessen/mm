@@ -32,7 +32,7 @@ def brute_force_pipeline(video_path, feature):
     if feature in  ["mfccs", "audio_powers"]:
         query_feature = compute_feature(feature, path = video_path, data = audio_samples.astype('float32'), samplerate = audio_samplerate)
 
-    
+
     results = {}
     videos = os.listdir(Database.FULL_VIDEOS_PATH)
 
@@ -40,20 +40,20 @@ def brute_force_pipeline(video_path, feature):
         if '.wav' in video:
             continue
         print(video)
-        
+
         y = []
         test_len = vid_len(Database.FULL_VIDEOS_PATH + video)
         test_fps = get_fps(Database.FULL_VIDEOS_PATH + video)
-        
-        
+
+
 
         if test_fps == 0:
             continue
-        
-        
-        if '.avi' in video: 
+
+
+        if '.avi' in video:
             test_samplerate, test_samples = wav.read(Database.FULL_VIDEOS_PATH + video.split('.avi')[0] + ".wav")
-        else: 
+        else:
             test_samplerate, test_samples = wav.read(Database.FULL_VIDEOS_PATH + video.split('.mp4')[0] + ".wav")
         num_samples_per_frame = len(test_samples) // test_len
 
@@ -73,12 +73,12 @@ def brute_force_pipeline(video_path, feature):
                         break
 
                     sample.append(frame)
-            elif feature in ["audio_powers", "mfccs"]: 
+            elif feature in ["audio_powers", "mfccs"]:
                 sample = test_samples[i:i+num_samples_per_frame].astype('float32')
-   
-     
-                
-            
+
+
+
+
             test_feature = compute_feature(feature, data = sample, samplerate= test_samplerate, num_frames = step_size)
             lengthLimiter = min(len(test_feature), len(query_feature)) #since sometimes we end up with weird numbers of frames (cuz of end of vid?)
             score = np.abs(test_feature[:lengthLimiter] - query_feature[:lengthLimiter]).sum()
@@ -97,7 +97,7 @@ def brute_force_pipeline(video_path, feature):
     print("Time taken:", time.time() - start, "seconds")
 
 def signature_pipeline(file_path, feature):
-    return None 
+    return None
 
     """
         The brute force version of the query.
@@ -149,31 +149,9 @@ def signature_pipeline(file_path, feature):
     print(sorted(best, key=lambda x: x[1])[:5])
     print(time.time() - start)
 
-def euclidean_norm_mean(x,y):
-    """
-        Copied from the lab
-    """
-    x = np.mean(x, axis=0)
-    y = np.mean(y, axis=0)
-    return np.linalg.norm(x-y)
-
-def getVideoFrames(video_path):
-    start = time.time()
-    cap = cv2.VideoCapture(video_path)
-    ret = True
-    frames = []
-    while ret:
-        ret, frame = cap.read()
-        frames.append(frame)
-    cap.release()
-
-    # remove the None at the end
-    frames.pop()
-    return frames
-
 def compute_feature(feature, path = None, data = None, samplerate = None, num_frames = None):
     match feature:
-        case "colorhists" : 
+        case "colorhists" :
             if path != None:
                 frames = getVideoFrames(path)
             if type(data) != None:
@@ -184,7 +162,7 @@ def compute_feature(feature, path = None, data = None, samplerate = None, num_fr
                 return sign_methods[feature](data, samplerate)
             return None
         case "audio_powers":
-            if path != None: 
+            if path != None:
                 frames = getVideoFrames(path)
                 samplerate, samples = wav.read(path.split('.mp4')[0] + ".wav")
                 if 'BlackKnight' in path:
@@ -192,19 +170,19 @@ def compute_feature(feature, path = None, data = None, samplerate = None, num_fr
                 return sign_methods[feature](samplerate, samples, len(frames))
             if type(data) != None:
                 return sign_methods[feature](samplerate, data, num_frames)
-                    
+
             return None # need to figure out how to do audio data
-        
+
         case "temporal_diff":
             if path != None:
                 frames = getVideoFrames(path)
-                
+
             if type(data) != None:
                 frames = data
             return sign_methods[feature](frames)
         case _ :
             print("==================\n An error in the matching occured :) \n ==================")
-            return -1 
+            return -1
 
 
 
@@ -213,10 +191,9 @@ if __name__ == '__main__':
     file_path = args.filepath
     pipeline = args.pipeline
     feature = args.feature
-    
+
 
     if pipeline == "brute_force":
         brute_force_pipeline(file_path, feature)
     elif pipeline == "signatures":
         signature_pipeline(file_path, feature)
-
