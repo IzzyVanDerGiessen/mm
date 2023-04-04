@@ -62,17 +62,19 @@ def temporal_diff_frames(frame, prev_frame):
         diff = diff + \
             np.sum(np.abs(prev_frame[:, :, i].astype(
                 'int16') - frame[:, :, i].astype('int16')))
+    
     return diff
 
 
 def temporal_difference(frames):
     out = []
     last = None
-    for frame in frames:
-        if not last:
-            continue
-        out.append(temporal_diff_frames(frame, last))
-        last = frame
+    for i in range(0, len(frames) - 1):
+        frame = frames[i]
+        next = frames[i+1]
+        out.append(temporal_diff_frames(frame, next))
+ 
+
     return np.array(out)
 
 

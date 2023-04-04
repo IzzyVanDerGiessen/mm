@@ -9,17 +9,17 @@ from Scorer import *
 
 VISUAL_FEATURES = ["colorhists", "temporal_diff"]
 AUDIO_FEATURES = ["audio_powers", "mfccs"]
+delimiter = "\n==============================================================\n"
 
 
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--filepath", type = str, default = "./videos_cropped/British_Plugs_Are_Better_from_0.0_to_5.0).mp4")
     parser.add_argument("--pipeline", type = str, default = "brute_force")
-    parser.add_argument("--feature", type = str, default = "colorhists")
-    parser.add_argument('-features','--list', nargs='+', help='<Required> Set flag', required=True)
+    parser.add_argument('--features','--list', nargs='+', help='<Required> Set flag', required=True)
     return parser.parse_args()
 
-def brute_force_pipeline(video_path, feature):
+def brute_force_pipeline(video_path, features):
     """
         The brute force version of the query.
     """
@@ -29,23 +29,26 @@ def brute_force_pipeline(video_path, feature):
     fps = get_fps(video_path)
 
     audio_samplerate, audio_samples = wav.read(video_path.split('.mp4')[0] + ".wav")
+    audio_path = video_path.split('.mp4')[0] + ".wav"
+    query_features = []
 
     if '.avi' in video_path:
         audio_samplerate, audio_samples = librosa.load(video_path.split('.avi')[0] + ".wav")
-    if feature in  ["colorhists", "temporal_diff"]:
-        query_feature = compute_feature(feature, path = video_path, data = frames)
-    if feature in  ["mfccs", "audio_powers"]:
-        query_feature = compute_feature(feature, path = video_path, data = audio_samples.astype('float32'), samplerate = audio_samplerate)
+    for feature in features:
+        if feature in VISUAL_FEATURES:
+            query_features.append(compute_feature(feature, video_path = video_path, video_data = frames))
+        if feature in AUDIO_FEATURES:
+            query_features.append(compute_feature(feature, audio_path = audio_path, audio_data = audio_samples.astype('float32'), samplerate = audio_samplerate))
 
     
     results = {}
     videos = os.listdir(Database.FULL_VIDEOS_PATH)
-    videos = filter(lambda x: ('.wav' in x), videos)
+    videos = filter(lambda x: ('.mp4' in x), videos) #filters our '.wav' files in the matching videos
 
     for video in videos:
         print(video)
         
-        y = []
+        out = []
         test_len = vid_len(Database.FULL_VIDEOS_PATH + video)
         test_fps = get_fps(Database.FULL_VIDEOS_PATH + video)
 
@@ -53,60 +56,57 @@ def brute_force_pipeline(video_path, feature):
             continue
 
         if '.avi' in video: 
-            test_samplerate, test_samples = wav.read(Database.FULL_VIDEOS_PATH + video.split('.avi')[0] + ".wav")
+            test_audio_samplerate, test_audio_samples = wav.read(Database.FULL_VIDEOS_PATH + video.split('.avi')[0] + ".wav")
         else: 
-            test_samplerate, test_samples = wav.read(Database.FULL_VIDEOS_PATH + video.split('.mp4')[0] + ".wav")
-        num_samples_per_frame = len(test_samples) // test_len
+            test_audio_samplerate, test_audio_samples = wav.read(Database.FULL_VIDEOS_PATH + video.split('.mp4')[0] + ".wav")
+        num_samples_per_frame = len(test_audio_samples) // test_len
 
         # step size in frames
         step_size = int((len(frames) / fps) * test_fps)
 
         cap = cv2.VideoCapture(Database.FULL_VIDEOS_PATH + video)
         for i in range(0, test_len-len(frames), step_size):
-            samples = []
-
-    
-
-            # to extend the implementation for both video and audio
-            if feature in  ["colorhists", "temporal_diff"]:
-                sample = []
-                for j in range(i, i+len(frames)):
-                    ret, frame = cap.read()
-                    if not ret:
-                        break
-                    sample.append(frame)
-            elif feature in ["audio_powers", "mfccs"]: 
-                sample = test_samples[i:i+num_samples_per_frame].astype('float32')
+            video_data = None
+            audio_data = None
                 
+            test_features = []
+
+            for feature in features:                             
+                if feature in  ["colorhists", "temporal_diff"]:
+                    video_data = []
+                    for j in range(i, i+len(frames)):
+                        ret, frame = cap.read()
+                        if not ret:
+                            break
+                        video_data.append(frame)
+                elif feature in ["audio_powers", "mfccs"]: 
+                    audio_data = test_audio_samples[i:i+num_samples_per_frame].astype('float32')
+                
+                test_feature = compute_feature(feature, video_data = video_data, audio_data = audio_data, samplerate = test_audio_samplerate, num_frames = step_size)
+                test_features.append(test_feature)
+            score = feature_scorer(test_features, query_features)
+
             
-            test_feature = compute_feature(feature, data = sample, samplerate= test_samplerate, num_frames = step_size)
-            
-            score = singleFeatureScorer(test_feature, query_feature)
             if score == score: #check if the number is not a nan 
-                y.append((video + ": " + str(i/test_fps) + "-" + str((i+step_size)/test_fps), score))
+                out.append((video + ": " + str(i/test_fps) + "-" + str((i+step_size)/test_fps), score))
             else:
                 print(score)
+            
 
-        results[video] = sorted(y, key=lambda x: x[1])
+        results[video] = sorted(out, key=lambda x: x[1])
 
     best = []
     for res in results.keys():
         best += results[res][:5]
-    print("Query Item", "(" + feature +"):", video_path)
-    print(sorted(best, key=lambda x: x[1])[:5])
-    print("Time taken:", time.time() - start, "seconds")
+    
+    print(delimiter,"Query Item:(",  features,");", video_path, delimiter)
+    print(sorted(best, key=lambda x: x[1])[:5], delimiter)
+    print("Time taken:", time.time() - start, "seconds", delimiter)
 
 def signature_pipeline(file_path, feature):
     return None 
 
 
-def euclidean_norm_mean(x,y):
-    """
-        Copied from the lab
-    """
-    x = np.mean(x, axis=0)
-    y = np.mean(y, axis=0)
-    return np.linalg.norm(x-y)
 
 def getVideoFrames(video_path):
     start = time.time()
@@ -122,40 +122,42 @@ def getVideoFrames(video_path):
     frames.pop()
     return frames
 
-def compute_feature(feature, path = None, data = None, samplerate = None, num_frames = None):
+def compute_feature(feature, video_path = None, audio_path = None, video_data = None, audio_data = None, samplerate = None, num_frames = None):
     match feature:
         case "colorhists" : 
-            if path != None:
-                frames = getVideoFrames(path)
-            if type(data) != None:
-                frames = data
+            if video_path != None:
+                frames = getVideoFrames(video_path)
+            if type(video_data) != None:
+                frames = video_data
             return sign_methods[feature](frames)
         case "mfccs":
-            if type(data) != None:
-                return sign_methods[feature](data, samplerate)
-            return None
+            if type(audio_data) == None:
+                raise Exception("Error when matchig MFCCs!")
+            return sign_methods[feature](audio_data, samplerate)
         case "audio_powers":
-            if path != None: 
-                frames = getVideoFrames(path)
-                samplerate, samples = wav.read(path.split('.mp4')[0] + ".wav")
-                if '.avi' in path:
-                    samplerate, samples = wav.read(path.split('.avi')[0] + ".wav")
+            if audio_path != None: 
+                frames = getVideoFrames(audio_path)
+                samplerate, samples = wav.read(audio_path.split('.mp4')[0] + ".wav")
+                if '.avi' in audio_path:
+                    samplerate, samples = wav.read(audio_path.split('.avi')[0] + ".wav")
                 return sign_methods[feature](samplerate, samples, len(frames))
-            if type(data) != None:
-                return sign_methods[feature](samplerate, data, num_frames)
+            if type(audio_data) != None:
+                return sign_methods[feature](samplerate, audio_data, num_frames)
                     
-            return None # need to figure out how to do audio data
+            raise Exception("Error when matching audio powers!")
         
         case "temporal_diff":
-            if path != None:
-                frames = getVideoFrames(path)
+            if video_path != None:
+                frames = getVideoFrames(video_path)
+                return sign_methods[feature](frames)
                 
-            if type(data) != None:
-                frames = data
+            if video_data == None:
+                raise Exception("Error when matching temporal difference!")
+                
+            frames = video_data
             return sign_methods[feature](frames)
         case _ :
-            print("==================\n An error in the matching occured :) \n ==================")
-            return -1 
+             raise Exception("==================\n An error in the matching occured :) \n ==================")
 
 
 
@@ -163,17 +165,15 @@ if __name__ == '__main__':
     args = get_args()
     file_path = args.filepath
     pipeline = args.pipeline
-    feature = args.feature
+    features = args.features
 
 
     frames = getVideoFrames(file_path)
     samplerate, audio = wav.read(file_path.split('.mp4')[0] + '.wav')
-
-    #mm_mfcc_colorhist(frames, audio, samplerate)
     
 
-    # if pipeline == "brute_force":
-    #     brute_force_pipeline(file_path, feature)
-    # elif pipeline == "signatures":
-    #     signature_pipeline(file_path, feature)
+    if pipeline == "brute_force":
+        brute_force_pipeline(file_path, features)
+    elif pipeline == "signatures":
+        signature_pipeline(file_path, features)
 

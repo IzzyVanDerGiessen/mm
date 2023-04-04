@@ -60,6 +60,7 @@ def createDirectories(videos_folder, cropped_videos=False):
 
                 case "temporal_diff":
                     signature = sign_methods[sign_type](frames)
+                
 
                 case _ :
                     print("An error in the matching occured :)")
