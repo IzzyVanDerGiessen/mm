@@ -15,7 +15,6 @@ def colorhist(frames):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         hist = np.bincount(gray.flatten(), None, 256)
         avg_hists += hist
-
     return avg_hists / len(frames)
 
 

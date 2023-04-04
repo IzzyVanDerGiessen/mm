@@ -108,31 +108,27 @@ def force(videos, len_frames, fps, query_feature):
 
         # step size in frames
         vid_size = (len_frames / fps) * test_fps
-        step_size = int(vid_size / 4)
+        step_size = int(vid_size / 2)
 
-        cap = cv2.VideoCapture(Database.FULL_VIDEOS_PATH + video)
+        frames = getVideoFrames(Database.FULL_VIDEOS_PATH + video)
+        sample = []
         for i in range(0, test_len-len_frames, step_size):
-            sample = None
 
             # to extend the implementation for both video and audio
             if feature in  ["colorhists", "temporal_diff"]:
-                sample = []
-                for j in range(i, i+len_frames):
-                    ret, frame = cap.read()
-                    if not ret:
-                        break
+                sample += frames[i+len(sample) : i+len_frames]
 
-                    sample.append(frame)
             elif feature in ["audio_powers", "mfccs"]:
                 sample = test_samples[i:i+num_samples_per_frame].astype('float32')
 
-            test_feature = compute_feature(feature, data = sample, samplerate = test_samplerate, num_frames = step_size)
+            test_feature = compute_feature(feature, data = sample, samplerate = test_samplerate, num_frames = len_frames)
             lengthLimiter = min(len(test_feature), len(query_feature)) #since sometimes we end up with weird numbers of frames (cuz of end of vid?)
             score = np.abs(test_feature[:lengthLimiter] - query_feature[:lengthLimiter]).sum()
             if score == score:
                 results.append((video + ": " + str(i/test_fps) + "-" + str((i+vid_size)/test_fps), score))
             else:
                 pass
+            sample = sample[min(step_size, len_frames):]
     return results
 
 def compute_feature(feature, path = None, data = None, samplerate = None, num_frames = None):
