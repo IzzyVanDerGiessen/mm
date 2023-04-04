@@ -27,7 +27,6 @@ def createDirectories(videos_folder, cropped_videos=False):
         video_path = videos_folder + video
         frames = getVideoFrames(video_path)
         for sign_type in sign_types:
-            print(sign_type)
             if not os.path.exists(PATH + sign_type):
                 os.makedirs(PATH + sign_type)
             signature = None
@@ -91,33 +90,38 @@ def loadCroppedVideos():
     for video in videos:
         spl = video.split("_from_")
         video_name = spl[0]
+        if video_name == 'BlackKnight':
+            continue
         segment_name = spl[1][:-5]
-        cropped_signs[video_name] = {}
+        if video_name not in cropped_signs:
+            cropped_signs[video_name] = {}
         for sign_method in sign_methods.keys():
-            cropped_signs[video_name][sign_method] = []
+            if sign_method not in cropped_signs[video_name]:
+                cropped_signs[video_name][sign_method] = []
             sign_file = PATH + sign_method + "/" + video_name + "/" + segment_name + ".txt"
-            with open(sign_file, "rb") as f:
-                compare_sign_bts = f.read()
-                compare_sign = np.frombuffer(compare_sign_bts)
+            # Some cropped videos have only a .wav file and not .mp4
+            try:
+                with open(sign_file, "rb") as f:
+                    compare_sign_bts = f.read()
+                    compare_sign = np.frombuffer(compare_sign_bts)
 
-                cropped_signs[video_name][sign_method].append(compare_sign)
+                    cropped_signs[video_name][sign_method].append(compare_sign)
+            except:
+                continue
 
 def loadDatabase():
     print("Start loading database...")
-    loadFullVideos()
+    #loadFullVideos()
     loadCroppedVideos()
     print("Done!")
 
 if __name__ == '__main__':
-
-
-    refresh_database = True
+    refresh_database = False
     if refresh_database:
         # clean the previous database
-        shutil.rmtree("database/signatures")
-        os.makedirs("database/signatures")
+        #shutil.rmtree("database/signatures")
+        #os.makedirs("database/signatures")
 
-        createDirectories(FULL_VIDEOS_PATH)
+        #createDirectories(FULL_VIDEOS_PATH)
         createDirectories(CROPPED_VIDEOS_PATH, True)
-
-     #loadDatabase()
+    loadDatabase()
