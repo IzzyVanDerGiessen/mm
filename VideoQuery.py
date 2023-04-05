@@ -42,12 +42,12 @@ def brute_force_pipeline(video_path, feature):
     print(sorted(results, key=lambda x: x[1])[:5])
     print("Time taken:", time.time() - start, "seconds")
 
-def signature_pipeline(video_path, feature, k=10):
+def signature_pipeline(video_path, feature, k=5):
     """
         Our version of the pipeline.
     """
     start = time.time()
-    Database.loadCroppedVideos()
+    Database.loadDatabase()
 
     frames = getVideoFrames(video_path)
     fps = get_fps(video_path)
@@ -59,7 +59,7 @@ def signature_pipeline(video_path, feature, k=10):
         query_feature = compute_feature(feature, path = video_path, data = frames)
     if feature in  ["mfccs", "audio_powers"]:
         query_feature = compute_feature(feature, path = video_path, data = audio_samples.astype('float32'), samplerate = audio_samplerate)
-
+        print(query_feature)
 
     videos = os.listdir(Database.FULL_VIDEOS_PATH)
 
@@ -69,10 +69,9 @@ def signature_pipeline(video_path, feature, k=10):
             continue
         if 'BlackKnight' in video:
             continue
-        #segments = filter(lambda x: x.startswith(video[:-4]), os.listdir(Database.CROPPED_VIDEOS_PATH))
         sign_results[video[:-4]] = []
 
-        db = Database.cropped_signs[video[:-4]][feature]
+        db = Database.cropped_signs[video[:-4]][feature] + [Database.full_signs[video[:-4]][feature]]
         for test_feature in db:
             score = np.abs(test_feature - query_feature).sum()
             if score == score:

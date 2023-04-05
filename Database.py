@@ -79,11 +79,13 @@ def loadFullVideos():
         for sign_method in sign_methods.keys():
             sign_file = PATH + sign_method + "/" + video[:-4] + "/full.txt"
 
-
-            with open(sign_file, "rb") as f:
-                compare_sign_bts = f.read()
-                compare_sign = np.frombuffer(compare_sign_bts)
-                full_signs[video[:-4]][sign_method] = compare_sign
+            try:
+                with open(sign_file, "rb") as f:
+                    compare_sign_bts = f.read()
+                    compare_sign = np.frombuffer(compare_sign_bts, dtype=np.float32)
+                    full_signs[video[:-4]][sign_method] = compare_sign
+            except:
+                print(sign_file)
 
 def loadCroppedVideos():
     videos = os.listdir(CROPPED_VIDEOS_PATH)
@@ -111,7 +113,7 @@ def loadCroppedVideos():
 
 def loadDatabase():
     print("Start loading database...")
-    #loadFullVideos()
+    loadFullVideos()
     loadCroppedVideos()
     print("Done!")
 
@@ -122,6 +124,6 @@ if __name__ == '__main__':
         #shutil.rmtree("database/signatures")
         #os.makedirs("database/signatures")
 
-        #createDirectories(FULL_VIDEOS_PATH)
-        createDirectories(CROPPED_VIDEOS_PATH, True)
+        createDirectories(FULL_VIDEOS_PATH)
+        #createDirectories(CROPPED_VIDEOS_PATH, True)
     loadDatabase()

@@ -7,6 +7,7 @@ import pims
 
 database_path = "database/signatures/"
 sign_types = ["colorhists", "mfccs", "temporal_diff", "audio_powers"]
+#sign_types = ["colorhists", "temporal_diff", "audio_powers"]
 
 def colorhist(frames):
 
