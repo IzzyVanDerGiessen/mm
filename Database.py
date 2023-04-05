@@ -2,7 +2,6 @@ import os
 import numpy as np
 import shutil
 from Signatures import *
-from VideoQuery import getVideoFrames
 import librosa
 
 
@@ -60,7 +59,7 @@ def createDirectories(videos_folder, cropped_videos=False):
 
                 case "temporal_diff":
                     signature = sign_methods[sign_type](frames)
-                
+
 
                 case _ :
                     print("An error in the matching occured :)")
@@ -120,12 +119,12 @@ def loadDatabase():
     print("Done!")
 
 if __name__ == '__main__':
-    refresh_database = False
+    refresh_database = True
     if refresh_database:
         # clean the previous database
         #shutil.rmtree("database/signatures")
         #os.makedirs("database/signatures")
 
         createDirectories(FULL_VIDEOS_PATH)
-        #createDirectories(CROPPED_VIDEOS_PATH, True)
+        createDirectories(CROPPED_VIDEOS_PATH, True)
     loadDatabase()

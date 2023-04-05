@@ -1,11 +1,8 @@
-
-# Hypothesis {#hypothesis .unnumbered}
-
+# Hypothesis
 Precomputing a subset data can greatly improve on the speed of the video
 queries without sacrificing a (substantial) amount of accuracy.
 
-# Link between the user perspective and the technical solution {#link-between-the-user-perspective-and-the-technical-solution .unnumbered}
-
+# Link between the user perspective and the technical solution
 The biggest convenience of Shazam is the way it can quickly find the
 source of the audio it is presented no matter at which you point the
 user starts recording. As a user of Video Shazam, I want to have my
@@ -16,8 +13,7 @@ method it used). The team wants to maximize the speedup of the pipeline
 by pre-computing both single- and multimodal signatures and minimize the
 corresponding decrease in accuracy of the final product.
 
-# Motivation of the proposed solution (why is it, in theory, better than alternatives?) {#motivation-of-the-proposed-solution-why-is-it-in-theory-better-than-alternatives .unnumbered}
-
+# Motivation of the proposed solution (why is it, in theory, better than alternatives?)
 A computation with a sliding window over every frame of every video in
 the database is excessive. The proposed method would have the pipeline's
 most intensive computations done in advance. The idea is to have the
@@ -29,7 +25,7 @@ seamless. All that would be left is the the computation of the desired
 feature/s on the input video and the comparison with each precomputed
 signature.
 
-# Innovation beyond the material learned in the labs {#innovation-beyond-the-material-learned-in-the-labs .unnumbered}
+# Innovation beyond the material learned in the labs
 
 The way the team came at this innovation was the frustration with the
 speed of the queries in Lab 5. Waiting more than a minute (in some cases
@@ -58,7 +54,7 @@ by having 10-,20-,30-second chunks, and more. However, that part has not
 been implemented yet due to time worries about the database size, so it
 has been left as a future improvement.
 
-# Quantitative evaluation and qualitative analysis of when it works and doesn't work and why. {#quantitative-evaluation-and-qualitative-analysis-of-when-it-works-and-doesnt-work-and-why. .unnumbered}
+# Quantitative evaluation and qualitative analysis of when it works and doesn't work and why.
 
 The team will focus on three criterion for evaluating our system. Those
 will be:
@@ -81,7 +77,7 @@ be deemed inefficient. A *substantial enough* decrease we define as it
 failing to identify a large amount of clear segment. This issue can be
 fixed by adding more data.
 
-# Pitch presented during the Lab {#pitch-presented-during-the-lab .unnumbered}
+# Pitch presented during the Lab
 
 As was clear during the labs, a brute force way of comparing videos
 frame by frame is too slow for a usable Shazam-like system. This is why
@@ -100,7 +96,7 @@ and so on. This way the system would be better at dealing with long
 videos. For now, we assume the query videos are on average about 15
 seconds long.
 
-# Assumptions made {#assumptions-made .unnumbered}
+# Assumptions made
 
 -   **Perfect Localization** (still video in video, but well-localized).
     The innovation wants to abstract from the variability of
@@ -114,7 +110,7 @@ seconds long.
     is to minimize the variability of the inputs (except the segments
     they give, of course).
 
-# Invariances of the system {#invariances-of-the-system .unnumbered}
+# Invariances of the system
 
 -   The pipeline aims to be \*scene and shot invariant\*. It should not
     matter which scene/shot (or even overlap of the two) from a video a
@@ -124,7 +120,7 @@ seconds long.
     performed on (color histograms, mfccs, some multimodal criterion,
     yada yada yada)
 
-# Analysis of the code {#analysis-of-the-code .unnumbered}
+# Analysis of the code
 
 The code has been organized in different files with specific purposes:\
 \
@@ -143,14 +139,14 @@ important part of our code, since it has methods for the common brute
 force pipeline and our experimental pipelines using signatures. Both of
 these are timed while performing the experiment.
 
-## Miscellaneous {#miscellaneous .unnumbered}
+## Miscellaneous
 
 -   The team has decided to use the Librosa library for the MFCC
     computation and Scikit for the reading of `.wav` files. As this is
     not the point of the innovation of the project, it should not affect
     result
 
-# Evaluation Results {#evaluation-results .unnumbered}
+# Evaluation Results
 
 As the signature functions have not been fully completed, there are no
 evaluation results yet.

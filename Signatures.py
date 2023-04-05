@@ -7,20 +7,25 @@ import pims
 
 database_path = "database/signatures/"
 sign_types = ["colorhists", "mfccs", "temporal_diff", "audio_powers"]
+#sign_types = ["colorhists"]
 
 def colorhist(frames):
-
-    avg_hists = np.zeros(256)
+    avg_hists = np.zeros((3, 256))
     for frame in frames:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        hist = np.bincount(gray.flatten(), None, 256)
-        avg_hists += hist
-    return avg_hists / len(frames)
+        c1 = frame[:,:,0]
+        c2 = frame[:,:,1]
+        c3 = frame[:,:,2]
+        cs = [c1, c2, c3]
+        for i, c in enumerate(cs):
+            hist = np.bincount(c.flatten(), None, 256)
+            avg_hists[i] += hist
+    return (avg_hists / len(frames)).flatten()
 
 
 def mfccs(audio, samplerate):
     # library implementation, idk what else to use tbh
-    features = librosa.feature.mfcc(y=audio, sr=samplerate, n_mfcc=13)
+    features = librosa.feature.mfcc(y=audio, sr=samplerate, n_mfcc=13, n_fft=512)
     return features
 
 

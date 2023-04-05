@@ -38,7 +38,7 @@ def brute_force_pipeline(video_path, features):
         if feature in VISUAL_FEATURES:
             query_features.append(compute_feature(feature, video_path = video_path, video_data = frames))
         if feature in AUDIO_FEATURES:
-            query_features.append(compute_feature(feature, audio_path = audio_path, audio_data = audio_samples.astype('float32'), samplerate = audio_samplerate))
+            query_features.append(compute_feature(feature, video_path = video_path, audio_path = audio_path, audio_data = audio_samples.astype('float32'), samplerate = audio_samplerate))
 
     results = {}
     videos = os.listdir(Database.FULL_VIDEOS_PATH)
@@ -68,7 +68,7 @@ def signature_pipeline(video_path, features, k=5):
             query_feature = compute_feature(feature, video_path = video_path, video_data = frames)
             query_features.append(query_feature)
         if feature in  ["mfccs", "audio_powers"]:
-            query_feature = compute_feature(feature, audio_path = audio_path, audio_data = audio_samples.astype('float32'), samplerate = audio_samplerate)
+            query_feature = compute_feature(feature, video_path = video_path, audio_path = audio_path, audio_data = audio_samples.astype('float32'), samplerate = audio_samplerate)
             query_features.append(query_feature)
 
     videos = os.listdir(Database.FULL_VIDEOS_PATH)
@@ -138,7 +138,7 @@ def force(videos, len_frames, fps, query_features):
                 elif feature in ["audio_powers", "mfccs"]:
                     sample = test_samples[i:i+num_samples_per_frame].astype('float32')
 
-                test_feature = compute_feature(feature, video_data = sample, samplerate = test_samplerate, num_frames = len_frames)
+                test_feature = compute_feature(feature, audio_data = sample, video_data = sample, samplerate = test_samplerate, num_frames = len_frames)
                 test_features.append(test_feature)
                 #lengthLimiter = min(len(test_feature), len(query_feature)) #since sometimes we end up with weird numbers of frames (cuz of end of vid?)
             score = feature_scorer(test_features, query_features)
@@ -164,10 +164,10 @@ def compute_feature(feature, video_path = None, audio_path = None, video_data = 
             return sign_methods[feature](audio_data, samplerate)
         case "audio_powers":
             if audio_path != None:
-                frames = getVideoFrames(audio_path)
-                samplerate, samples = wav.read(audio_path.split('.mp4')[0] + ".wav")
+                frames = getVideoFrames(video_path)
+                samplerate, samples = wav.read(video_path.split('.mp4')[0] + ".wav")
                 if '.avi' in audio_path:
-                    samplerate, samples = wav.read(audio_path.split('.avi')[0] + ".wav")
+                    samplerate, samples = wav.read(video_path.split('.avi')[0] + ".wav")
                 return sign_methods[feature](samplerate, samples, len(frames))
             if type(audio_data) != None:
                 return sign_methods[feature](samplerate, audio_data, num_frames)
