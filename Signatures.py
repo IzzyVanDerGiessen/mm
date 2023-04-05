@@ -26,6 +26,7 @@ def colorhist(frames):
 def mfccs(audio, samplerate):
     # library implementation, idk what else to use tbh
     features = librosa.feature.mfcc(y=audio, sr=samplerate, n_mfcc=13, n_fft=512)
+    print(features.shape)
     return features
 
 

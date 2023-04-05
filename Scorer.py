@@ -2,12 +2,12 @@ import numpy as np
 
 
 def singleFeatureScorer(test_feature, query_feature):
-
+    test_feature = test_feature.flatten()
+    query_feature = query_feature.flatten()
     lengthLimiter = min(len(test_feature), len(query_feature)) #since sometimes we end up with weird numbers of frames (cuz of end of vid?)
     test_feature = normalize_feature(test_feature[:lengthLimiter])
     query_feature = normalize_feature(query_feature[:lengthLimiter])
     score = np.mean(np.abs(test_feature - query_feature))
-
     return score
 
 def normalize_feature(feature):

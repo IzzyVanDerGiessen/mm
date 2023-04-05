@@ -84,6 +84,7 @@ def loadFullVideos():
                 with open(sign_file, "rb") as f:
                     compare_sign_bts = f.read()
                     compare_sign = np.frombuffer(compare_sign_bts, dtype=np.float32)
+                    print(compare_sign.shape)
                     full_signs[video[:-4]][sign_method] = compare_sign
             except:
                 print(sign_file)
