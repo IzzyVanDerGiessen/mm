@@ -4,5 +4,7 @@ videos_cropped/
 Videos.zip
 
 # Database files
-database/
 kur/
+database/
+.vscode/
+__pycache__/

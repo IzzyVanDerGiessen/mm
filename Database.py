@@ -1,8 +1,9 @@
 import os
-import cv2
 import numpy as np
 import shutil
 from Signatures import *
+from VideoQuery import getVideoFrames
+import librosa
 
 
 PATH = "./database/signatures/"
@@ -12,24 +13,59 @@ CROPPED_VIDEOS_PATH = "./videos_cropped/"
 def createDirectories(videos_folder, cropped_videos=False):
     videos = os.listdir(videos_folder)
     for video in videos:
+        if '.wav' in video:
+            continue
+        print(video)
+
+        if cropped_videos:
+            spl = video.split("_from_")
+            video_name = spl[0]
+            segment_name = spl[1][:-5]
+        else:
+            video_name = video[:-4]
+            segment_name = "full"
+
+        video_path = videos_folder + video
+        frames = getVideoFrames(video_path)
         for sign_type in sign_types:
+            print(sign_type)
             if not os.path.exists(PATH + sign_type):
                 os.makedirs(PATH + sign_type)
-
-            if cropped_videos:
-                spl = video.split("_from_")
-                video_name = spl[0]
-                segment_name = spl[1][:-5]
-            else:
-                video_name = video[:-4]
-                segment_name = "full"
+            signature = None
 
             data_path = PATH + sign_type + "/" + video_name
             if not os.path.exists(data_path):
                 os.makedirs(data_path)
 
-            video_path = videos_folder + video
-            signature = sign_methods[sign_type](video_path)
+            match sign_type:
+                case "colorhists" :
+
+                    signature = sign_methods[sign_type](frames)
+
+                case "mfccs":
+
+                    #audio, sample_rate = librosa.load(video_path.split('.mp4')[0] + ".wav")
+                    if '.avi' in video_path:
+                        audio, sample_rate = librosa.load(video_path.split('.avi')[0] + ".wav")
+                    else:
+                        audio, sample_rate = librosa.load(video_path.split('.mp4')[0] + ".wav")
+                    signature = sign_methods[sign_type](audio, sample_rate)
+
+                case "audio_powers":
+                    audio, samplerate = None, None
+                    if '.avi' in video_path:
+                        audio, samplerate = librosa.load(video_path.split('.avi')[0] + ".wav")
+                    else:
+                        audio, samplerate = librosa.load(video_path.split('.mp4')[0] + ".wav")
+                    signature = sign_methods[sign_type](samplerate, audio, len(frames))
+
+                case "temporal_diff":
+                    signature = sign_methods[sign_type](frames)
+                
+
+                case _ :
+                    print("An error in the matching occured :)")
+                    return -1
 
             f = open(data_path + "/" + segment_name + ".txt", "wb")
             f.write(signature.tobytes())
@@ -45,6 +81,8 @@ def loadFullVideos():
         full_signs[video[:-4]] = {}
         for sign_method in sign_methods.keys():
             sign_file = PATH + sign_method + "/" + video[:-4] + "/full.txt"
+
+
             with open(sign_file, "rb") as f:
                 compare_sign_bts = f.read()
                 compare_sign = np.frombuffer(compare_sign_bts)
@@ -73,9 +111,9 @@ def loadDatabase():
     print("Done!")
 
 if __name__ == '__main__':
-    loadDatabase()
 
-    refresh_database = False
+
+    refresh_database = True
     if refresh_database:
         # clean the previous database
         shutil.rmtree("database/signatures")
@@ -83,3 +121,5 @@ if __name__ == '__main__':
 
         createDirectories(FULL_VIDEOS_PATH)
         createDirectories(CROPPED_VIDEOS_PATH, True)
+
+     #loadDatabase()
