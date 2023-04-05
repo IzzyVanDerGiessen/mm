@@ -2,11 +2,15 @@ import cv2
 import os 
 import argparse
 import scipy.io.wavfile as wav
+import moviepy.editor as mp
+
 
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--audio", type = bool, default = False)
     parser.add_argument("--video", type = bool, default = False)
+    parser.add_argument("--input", type = bool, default = False)
+    parser.add_argument("--input_path", type = str, default = "./input-videos/Why_Does_Nighttime_Smartphone_Footage_Look_All_Flickery_from_15.0_to_26.0.mp4")
     parser.add_argument("--cliplength", type = int, default = 5)
     return parser.parse_args()
 
@@ -64,11 +68,16 @@ def crop_audio(clip_duration):
 
 
       
-        for j in range(0, len(samples), step_size):
+        for j in range(0, len(samples), 1):
             data = samples[j:j + step_size]
             audio_beginning = j // samplerate
             clip_name = "./videos_cropped/" + (audio.split('.')[0] + '_from_{start:.1f}_to_{end:.1f}).wav').format(start = audio_beginning, end = audio_beginning + clip_duration)
             wav.write(clip_name, samplerate, data)
+
+def process_input(filepath):
+    video = mp.VideoFileClip(filepath)
+    audio_array = video.audio.to_soundarray().astype('float32')
+    wav.write(filepath.split('.mp4')[0]+".wav", video.audio.fps, audio_array)
 
 
 
@@ -86,5 +95,8 @@ if __name__ == '__main__':
         crop_videos(clip_duration)
     if args.audio:
         crop_audio(clip_duration)
+    if args.input:
+        process_input(args.input_path)
+
 
     
