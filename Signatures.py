@@ -8,7 +8,6 @@ import pims
 database_path = "database/signatures/"
 sign_types = ["colorhists", "mfccs", "temporal_diff", "audio_powers"]
 
-
 def colorhist(frames):
 
     avg_hists = np.zeros(256)
@@ -16,7 +15,6 @@ def colorhist(frames):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         hist = np.bincount(gray.flatten(), None, 256)
         avg_hists += hist
-
     return avg_hists / len(frames)
 
 
@@ -24,6 +22,10 @@ def mfccs(audio, samplerate):
     # library implementation, idk what else to use tbh
     features = librosa.feature.mfcc(y=audio, sr=samplerate, n_mfcc=13)
     return features
+
+
+def getVideoFrames(video_path):
+    return pims.Video(video_path)
 
 def vid_len(video):
     cap = cv2.VideoCapture(video)
