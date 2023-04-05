@@ -184,31 +184,4 @@ if __name__ == '__main__':
     elif pipeline == "signatures":
         signature_pipeline(file_path, features)
 
-def colorhist2(frames):
-    """
-        Copied from the lap (very slow!)
-    """
-    hists = []
-    for frame in frames:
-        try:
-            chans = cv2.split(frame)
-        except:
-            print(frame)
-            x = 1/0
-            print(x)
-        color_hist = np.zeros((256,len(chans)))
-        for i in range(len(chans)):
-            color_hist[:,i] = np.histogram(chans[i], bins=np.arange(256+1))[0]/float((chans[i].shape[0]*chans[i].shape[1]))
-        hists.append(color_hist)
-    return hists
 
-def colorhist(frames):
-    avg_hists = np.zeros(256)
-    for frame in frames:
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        hist = np.bincount(gray.flatten(), None, 256)
-        avg_hists += hist
-
-    return avg_hists / len(frames)
-
-query("./videos_cropped/British_Plugs_Are_Better_from_0.0_to_5.0).mp4")

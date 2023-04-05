@@ -9,19 +9,15 @@ database_path = "database/signatures/"
 sign_types = ["colorhists", "mfccs", "temporal_diff", "audio_powers"]
 
 
-def signColorhists(video, path = True):
-    if path:
-        video = get_video_frames(video)
+def colorhist(frames):
+
     avg_hists = np.zeros(256)
-    for frame in video:
+    for frame in frames:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         hist = np.bincount(gray.flatten(), None, 256)
         avg_hists += hist
 
     return avg_hists / len(frames)
-
-    avg_hists /= len(video)
-    return avg_hists
 
 
 def mfccs(audio_path='./videos/BlackKnight.wav'):
@@ -29,6 +25,18 @@ def mfccs(audio_path='./videos/BlackKnight.wav'):
     # library implementation, idk what else to use tbh
     features = librosa.feature.mfcc(y=audio, sr=sample_rate)
     return features
+
+def vid_len(video):
+    cap = cv2.VideoCapture(video)
+    vid_len = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    cap.release()
+    return vid_len
+
+def get_fps(video):
+    cap = cv2.VideoCapture(video)
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    cap.release()
+    return fps
 
 
 def get_video_frames(video_path):
@@ -85,7 +93,7 @@ def audio_signal_power(audiopath):
 
 
 sign_methods = {
-    "colorhists": signColorhists,
+    "colorhists": colorhist,
     "temporal_diff": temporal_difference,
     "mfccs": mfccs,
     "audio_powers": audio_signal_power

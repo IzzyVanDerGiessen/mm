@@ -2,6 +2,7 @@ import os
 import numpy as np
 import shutil
 from Signatures import *
+from VideoQuery import getVideoFrames
 import librosa
 
 
