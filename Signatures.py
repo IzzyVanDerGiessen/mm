@@ -20,10 +20,9 @@ def colorhist(frames):
     return avg_hists / len(frames)
 
 
-def mfccs(audio_path='./videos/BlackKnight.wav'):
-    audio, sample_rate = librosa.load(audio_path)
+def mfccs(audio, samplerate):
     # library implementation, idk what else to use tbh
-    features = librosa.feature.mfcc(y=audio, sr=sample_rate)
+    features = librosa.feature.mfcc(y=audio, sr=samplerate, n_mfcc=13)
     return features
 
 def vid_len(video):
@@ -60,24 +59,18 @@ def temporal_diff_frames(frame, prev_frame):
     return diff
 
 
-def temporal_difference(video, path = True):
+def temporal_difference(frames):
     out = []
-    if path:
-        video = get_video_frames(video)
-    for i in range(len(video) - 1):
-        out.append(temporal_diff_frames(video[i+1], video[i]))
+    last = None
+    for i in range(0, len(frames) - 1):
+        frame = frames[i]
+        next = frames[i+1]
+        out.append(temporal_diff_frames(frame, next))
     return np.array(out)
 
 
-def audio_signal_power(audiopath):
-    videopath = audiopath.split(".wav")[0] + ".mp4"
-    if 'BlackKnight' in videopath:
-        videopath = './videos/BlackKnight.avi'
-    samplerate, samples = wav.read(audiopath)
+def audio_signal_power(samplerate, samples, num_frames):
     time = samples.shape[0] / samplerate
-
-    frames = get_video_frames(videopath)
-    num_frames = len(frames) + 1
     frame_rate = num_frames // time
 
     T = int(samplerate // frame_rate)
@@ -85,11 +78,12 @@ def audio_signal_power(audiopath):
     out = []
     i = 0
 
-    for frame in frames:
+    for j in range(num_frames):
         out.append(np.sum(np.square(samples[i:i+T]))/T)
         i += int(T)
 
     return np.array(out)
+
 
 
 sign_methods = {
