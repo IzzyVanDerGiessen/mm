@@ -1,6 +1,6 @@
 # Video Files#
-videos/
-videos_cropped/
+# videos
+# videos_cropped
 Videos.zip
 
 # Database files
@@ -8,3 +8,4 @@ kur/
 database/
 .vscode/
 __pycache__/
+__pycache__

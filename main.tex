@@ -1,8 +1,6 @@
 \documentclass{article}
 \usepackage{graphicx} % Required for inserting images
 
-\title{MMA Invention Assignment}
-\author{Izzy van der Giessen, Vasil Dakov}
 \usepackage{geometry}
 \geometry{
 left=20mm,
@@ -10,74 +8,204 @@ top=20mm,
 }
 \newcommand\tab[1][1cm]{\hspace*{#1}}
 
+\title{%
+  MMA Invention Assignment \\
+  \large Video Shazam - Query Optimization Through Signatures}
+\author{Izzy van der Giessen, Vasil Dakov}
+\date{}
 
 \begin{document}
-
 \maketitle
 
+\section*{Abstract}
+\tab The goal of this invention assignment is to create a Shazam-like system for videos so that a user can give a query video and gets as a result the name of a video similar to it together with the time frame which matched the query video. Our implementation of this system contains an innovation to test the hypothesis described below.
+
 \section*{Hypothesis}
-\tab Precomputing a subset data can greatly improve on the speed of the video queries without sacrificing a (substantial) amount of accuracy.
+\tab Precomputing a subset of the data can greatly improve on the speed of the video queries without sacrificing a (substantial) amount of accuracy.
 
 \section*{Link between the user perspective and the technical solution}
-\tab The biggest convenience of Shazam is the way it can quickly find the source of the audio it is presented no matter at which you point the user starts recording. As a user of Video Shazam, I want to have my queries return an output (even one that is slightly off) in a reasonable time. An issue with the video query system from Lab 5 was how slow the feature matching was for an entire video (due to the sliding window method it used). The team wants to maximize the speedup of the pipeline by pre-computing both single- and multimodal signatures and minimize the corresponding decrease in accuracy of the final product. 
+\tab The biggest convenience of Shazam is the way it can quickly find the source of the audio it is presented no matter at which you point the user starts recording. As a user of Video Shazam, I want to have my query return an output (even one that might be slightly off) in a reasonable time. An issue with the sliding window system from Lab 5 was how slow the feature matching was for an entire video (due to the sliding window method it used). The team wants to maximize the speedup of the pipeline by pre-computing signatures and minimize the expected decrease in the accuracy of the final product. This will further satisfy users by making the query experience more seamless.
 
 \section*{Motivation of the proposed solution (why is it, in theory, better than alternatives?)}
-\tab A computation with a sliding window over every frame of every video in the database is excessive. The proposed method would have the pipeline's most intensive computations done in advance. The idea is to have the comparison be done through a signature on the entire video as well as multiple small segments over the entire video, instead of through a frame-by-frame sliding window. In theory, this solution should save the majority of the computation and make the Video Shazam experience more seamless. All that would be left is the the computation of the desired feature/s on the input video and the comparison with each precomputed signature. 
+\tab A feature computation over every frame of every video in the database is excessive. While it does undeniably increase accuracy, there is typically no substantial difference between two (or three, or four for that matter) subsequent frames. Thus, due to the intensity of the calculations, it would make sense to try to limit the amount we compute. The proposed method would have the pipeline's most intensive calculations done in advance. The comparison will be instead done through a "signature" on the entire video and multiple small segments over the entirety video, instead of through a frame-by-frame sliding window. In theory, this solution should save the majority of the computation and make the Video Shazam experience more seamless. All that would be left is the computation of the desired feature/s on the input video and the comparison with each precomputed signature. Our goal is not to increase accuracy, but rather to increase speed while sacrificing as little accuracy as possible.
 
 \section*{Innovation beyond the material learned in the labs}
 
- \tab The way the team came at this innovation was the frustration with the speed of the queries in Lab 5. Waiting more than a minute (in some cases even more) made the system practically unusable in a non-lab scenario. This is what led to the realization that most of those computations are redundant and the idea of having pre-computed signatures. From then on, the team was focused on solving the issues from that approach.
-\\ \tab The first issue the came up was that of the differences between segments in the same video. While, on average, it is fair to say that a single video looks a certain way, there are sometimes small clips/segments of it that may look radically different (e.g. a scene change in a movie, a cut in a news report, etc.). If a user inputs one of those sections, having a single signature for the entire video will likely not be sufficient. The solution the team came up with was segmenting every video in the database into 5-second chunks. The pipeline will use those for the identification of the video segment provided as well. That way even when a user gives an arbitrary and seemingly unique chunk of a video, the pipeline has a chance of finding it \textit{hopefully} faster than the brute-force method from the labs. 
-\\ \tab Another issue that the team expects to come up is that of the user inputting a video segment that is between two or more of the 5-second chunks in our database (e.g. 00:03 - 00:08 or 00:03 - 00:17). A possible solution is computing signatures for each pair of 5-second segments as well. This can be extended for queries spanning multiple 5-second chunks by having 10-,20-,30-second chunks, and more. However, that part has not been implemented yet due to time worries about the database size, so it has been left as a future improvement. 
+ \tab The way the team came at this innovation was frustration with the speed of the queries in Lab 5. The queries were functional, still  based on color histograms, MFCCs, audio powers, and temporal differences. Waiting more than a minute (in some cases even more) makes the system practically unusable. This is what led to the realization that most of those computations are redundant and gave rise the idea of pre-computing signatures. From then on, the team was focused on minimizing the drawbacks of this new approach.
+\\ \tab The first issue that came up was that of the differences between segments in the same video. While it is a fair assumption that a single video has a certain "average" look, many videos have small clips/segments of it that may look radically different. Examples are scene changes in a movie or a cut in a news report. If a user inputs data from just one of these segments, a single signature for the entire video will not be sufficient. The solution the team came up with was segmenting every video in the database into 5-second chunks. The pipeline will use them for the identification of the video segment. That way even when a user gives an arbitrary and seemingly unique chunk of a video, the pipeline has a chance of finding it faster than the aforementioned brute-force method. 
+\\ \tab Another issue that the team expects is that of a user inputting a video segment  between two or more of the 5-second chunks in our database (e.g. 00:03 - 00:08 or 00:03 - 00:17 instead of 00:05 - 00:10). A possible solution is computing signatures for each pair of 5-second segments (so a 10-second signature in this case). This can be extended for queries spanning multiple 5-second chunks by having 10-,20-, and 30-second chunks, building a bottom-up tree structure of video signatures. However, that extension has the drawback of bloating the database size even more and has been left as a point of future improvement.
 
 \section*{Quantitative evaluation and qualitative analysis of when it works and doesn't work
 and why.}
 
-The team will focus on three criterion for evaluating our system. Those will be: \begin{itemize}
-    \item \textbf{Correct video identification}: Did the pipeline manage to find the correct video at all?
-    \item \textbf{Correct segment identification}: Did the pipeline manage to find exactly which part of the videos in the database it was given?
-    \item \textbf{Time taken}: Did the signature method manage to output an answer any faster than the brute-force sliding window method?
-\end{itemize}
+The team will focus on three criterion for evaluating our system. Those will be: \begin{enumerate}
+
+    \item \textbf{Correct video identification}: Did the pipeline manage to find the correct video at all? The output of the pipeline is a list of the five best matches. If the query video is anywhere in those five matches, the criterion is considered satisfied.
+    \item \textbf{Correct segment identification}: Did the pipeline manage to find exactly which part of the videos in the database it was given? The team will consider any intersection with the correct segment a success.
+    \item \textbf{Time taken}: Did the signature method manage to output an answer any faster than the brute-force sliding window method? The criterion is considered satisfied if the speed improvement is more than double.
+\end{enumerate}
 
 
-\tab Based on the combination of these three factors we will consider whether our system is a success or not. As far as the results we are expecting, we expect faster performance with a decrease in accuracy (due to the nature of limiting the comparisons possible). If the decrease in accuracy is substantial enough, even if the system is faster, it would be deemed inefficient. A \textit{substantial enough} decrease we define as it failing to identify a large amount of clear segment. This issue can be fixed by adding more data. 
+\tab Based on the combination of these three factors the team will consider whether the system is a success or not. The expected results are faster performance with a decrease in accuracy (due to the nature of limiting the amount comparisons possible). If that decrease in accuracy is substantial enough, even if the system is faster, it would be deemed inefficient. The team defines a \textit{substantial enough} decrease as the signature pipeline failing to identify a video the brute-force pipeline manages to find. This issue should be fixable by adding more data. 
 
 \section*{Pitch presented during the Lab}
-\tab As was clear during the labs, a brute force way of comparing videos frame by frame is too slow for a usable Shazam-like system. This is why the team decided to innovate on the way videos are compared by creating a signature for every full video and every five second segment. The first step in the pipeline, after pre-processing, is to compute a signature for the query video. Instead of comparing every frame in video segments, only the signature is compared and the k best results are then used to find the best match of the query video.
-Our goal is to improve performance without harming the accuracy too much. This is why time is our main evaluation metric, which we examine quantitatively. A shorter run time without a noticeable decrease in accuracy is considered a success.
-In the future, a tree-like structure could be created where the bottom layer is five seconds, the next layer ten seconds, then twenty and so on. This way the system would be better at dealing with long videos. For now, we assume the query videos are on average about 15 seconds long.
+\tab As was clear during the labs, a brute force way of comparing videos frame by frame is too slow for a usable Shazam-like system. This is why the team decided to innovate on the way videos are compared by creating a signature for every full video and every five second segment. The first step in the pipeline, after pre-processing, is to compute a signature for the query video. Instead of comparing every frame in video segments, only the signature is compared and the $k$ best results are then used to find the best match of the query video.
+Our goal is to improve performance without decreasing accuracy. This is why time is our main evaluation metric, which we examine quantitatively. A shorter run time without a noticeable decrease in accuracy is considered a success. As said in the previous section, 
 
 
 \section*{Assumptions made}
-\begin{itemize}
+\begin{enumerate}
     \item \textbf{Perfect Localization} (still video in video, but well-localized). The innovation wants to abstract from the variability of localization to test the speed improvement as much as possible.
-    \item \textbf{The average user video segment given will not be more than 15 seconds}. This is both to mimic a realistic user scenario and to minimize the amount of data needed for the experiment.
-    \textbf{All input videos will have been recorded with the same camera} (and by extension microphone) or be of the computer screen recordings. This is to minimize the variability of the inputs (except the segments they give, of course).
-\end{itemize}
+    \item \textbf{The average user video segment given will not be more than 15 seconds}. This is both to mimic a realistic user scenario and to minimize the query time and the data setup process of the pipeline, which both take enough time as is. 
+    \item \textbf{All input videos will have been recorded with the same camera} (and by extension microphone) or screen recordings of the same screen with the same resolution and aspect ratio. This is to minimize the variability of the inputs (except the segments they give, of course).
+
+
+\end{enumerate}
+
+All of these assumptions are made in service of making the videos as simple to recognize as possible. The aim is to make the only difference in the pipelines be in speed. 
 
 
 \section*{Invariances of the system}
-\begin{itemize}
-    \item The pipeline aims to be *scene and shot invariant*. It should not matter which scene/shot (or even overlap of the two) from a video a user provides, the system should still be able to find it
-    \item The pipeline should be able to work for any of the features it is performed on (color histograms, mfccs, some multimodal criterion, yada yada yada)
-\end{itemize}
+\begin{enumerate}
+    \item Just like in the lab video query system, the pipeline aims to be *scene and shot invariant*. It should not matter which scene/shot (or even overlap of the two) from a video a user provides, the system should still be able to find it. 
+    \item The pipeline should be able to work for any of the features it is performed on (color histograms, mfccs, audio powers, temporal differences). It should also work for any combination of the four features.
+\end{enumerate}
 
 
 \section*{Analysis of the code}
 The code has been organized in different files with specific purposes: \\ \\
-The \texttt{Database.py} file creates and loads the database, which consists of full and cropped videos. \\
-\\The \texttt{Signatures.py} file contains all the methods for computing signatures, which, as explained above, play an important role in our retrieval system. Currently, the system has the capacity to create signatures for four basic features (taken from the lab): \texttt{colorhists, mfccs, audio\_powers, temporal\_difference}. The system can be extended for an $n$ amount of features, including multi modal ones.   \\
-\\
-To run the actual pipeline, \texttt{VideoQuery.py} is used. This is the most important part of our code, since it has methods for the common brute force pipeline and our experimental pipelines using signatures. Both of these are timed while performing the experiment.
+The \texttt{Database.py} file creates and loads the database, which consists of full and cropped videos. All signatures are stored as \texttt{.txt} files containing numpy arrays extracted into a dictionary at runtime.\\
+\\The \texttt{Signatures.py} file contains all the methods for computing signatures, which, as explained above, play an important role in our retrieval system. Currently, the system has the capacity to create signatures for four basic features (taken from the lab): 
+\texttt{colorhists, mfccs, audio\_powers, temporal\_diff}. The system can be extended for any combination of those features, including multi-modal ones, simply by running the query with more features inside of it.   \\
+\\For the computation of the score per each video segment in the database compared to the input, the team has created several normalization and evaluation methods in the \texttt{Scorer.py} file. The system computes a normalized score for each feature provided to the pipeline and takes the mean score as the final output. A lower score means a better match.\\\\ 
+To run the actual pipeline, \texttt{VideoQuery.py} is used. This is the most important part of our codebase since it has the methods for the common brute force pipeline and our experimental signature pipeline. In the case of the brute force pipeline, a sliding window is performed over each video in the pipeline which is computed every time, after which the estimated segments and matches are output. For the signature pipeline, the query video's signature is computed and put against all other signatures in the database, outputting a $k$-best matching list (we have chosen $k =5$). The videos from that list then get put through the brute-force pipeline as well with the aim of finding a better time estimation for the query and higher accuracy.   
 
 
 \subsection*{Miscellaneous}
     \begin{itemize}
     \item The team has decided to use the Librosa library for the MFCC computation and Scikit for the reading of \texttt{.wav} files. As this is not the point of the innovation of the project, it should not affect result
+    \item The team used the MoviePy library for the conversion of \texttt{.mp4} to \texttt{.wav} files.
     \end{itemize}
 
-\section*{Evaluation Results}
-As the signature functions have not been fully completed, there are no evaluation results yet. 
+\section*{Evaluation}
+\subsection*{Evaluation Data}
+\tab The signature innovation is not related to the localization step, since the computations are entirely separate. Thus, as said in a previous section, perfect localization is assumed. For input data for the query, the team has prepared various well-localized input videos. This includes several screen-recorded and phone-recorded videos, where the majority of the screen is taken up by the input video. This should mimic the effects of perfect localization, while making it still applicable to real-world scenarios (due to the camera-recorded videos-in-videos). As far as their length, to test the system more extensively, the team prepared 5-second segments, 10-second segments and intervals between 5-second segments (e.g.00:07 - 00:12). This way, the weaknesses of the pipeline will have been tested as well. 
+\subsection*{Results} 
+We decided to use three manually recorded videos to test our system. The results of these are shown below: \\
+\\\textit{Note:} The team has decided to focus primarily on \texttt{colorhists} and \texttt{mfccs} queries, since both team members deemed them the most informative during Lab 5. To illustrate an \texttt{audio\_powers} and \texttt{temporal\_diff} example, we have left it at the end of this section, but we will not focus on them. \\
+\begin{enumerate}
+    \item\texttt{British\_Plugs\_Are\_Better\_from\_0.0\_to\_5.0} \begin{center}
+        \includegraphics[width = \linewidth]{images/british_plugs_are_better.png}
+    \end{center} \begin{enumerate}
+        \item \textbf{Brute-Force Pipeline Results}: \begin{enumerate}
+            \item \texttt{mfccs:}
+            \begin{center}
+                \includegraphics[width = \linewidth]{images/british_plugs_mfcc_bf.png}
+            \end{center}
+            \item \texttt{colorhists:} \begin{center}
+                 \includegraphics[width = \linewidth]{images/british_plugs_colorhists_bruteforce.png}
+                
+            \end{center} 
+        \end{enumerate}
+        \item \textbf{Signature Pipeline Results:} \begin{enumerate}
+            \item \texttt{mfccs:} \begin{center}
+                \includegraphics[width = \linewidth]{images/british_plugs_mfcc_signatures.png}
+            \end{center}
+            \item \texttt{colorhists:}\begin{center}
+                \includegraphics[width = \linewidth]{images/british_plugs_colorhists_signatures.png}
+            \end{center}
+        \end{enumerate}
+    \end{enumerate}
+    \item\texttt{TUDelft\_DataScience\_Martha\_Larson\_from\_20.0\_to\_31.0} \begin{center}
+            \includegraphics[width = \linewidth]{images/martha_larson.png}
+    \end{center} \begin{enumerate}
+        \item \textbf{Brute-Force Pipeline Results}: \begin{enumerate}
+            \item \texttt{mfccs:}             \begin{center}
+                \includegraphics[width = \linewidth]{images/martha_larson_mfcc_brute_foce.png}
+            \end{center}
+            \item \texttt{colorhists:}
+        \end{enumerate}
+        
+        \item \textbf{Signature Pipeline Results:} \begin{enumerate}
+            \item \texttt{mfccs:}             \begin{center}
+                \includegraphics[width = \linewidth]{images/martha_larson_mfcc_signatures.png}
+            \end{center}
+            \item \texttt{colorhists:}             \begin{center}
+                \includegraphics[width = \linewidth]{images/martha_larson_colorhists_signatures.png}
+            \end{center}
+        \end{enumerate}
+    \end{enumerate}
+    
+    \item\texttt{Delta|V\_from\_13.0\_to\_17.0.mp4}\begin{center}
+        \includegraphics[width = \linewidth]{images/delta_iv.png}
+    \end{center}\begin{enumerate}
+        \item \textbf{Brute-Force Pipeline Results:} \begin{enumerate}
+            \item \texttt{mfccs:}
+            \begin{center}
+                \includegraphics[width = \linewidth]{images/delta_iv_brute_force_mfcc.png}
+            \end{center}
+            \item \texttt{colorhists:}
+                        \begin{center}
+                \includegraphics[width = \linewidth]{images/brute_force_colorhists_delta_iv.png}
+            \end{center}
+            
+        \end{enumerate}
+        \item \textbf{Signature Pipeline Results:}\begin{enumerate}
+            \item \texttt{mfccs:}
+            \begin{center}
+                \includegraphics[width = \linewidth]{images/delta_iv_mfcc_query_signature_out.png}
+            \end{center}
+            \item \texttt{colorhists:}            \begin{center}
+                \includegraphics[width = \linewidth]{images/delta_iv_colorhists_signatures.png}
+            \end{center}
+            
+        \end{enumerate}
+    \end{enumerate}
+    
+\end{enumerate}
+\subsection*{Demonstration of \texttt{audio\_powers} and \texttt{temporal\_diff}}
+\begin{enumerate}
+        \item \textbf{Brute-Force Pipeline Results:} \begin{enumerate}
+            \item \texttt{audio\_powers:} 
+            \begin{center}
+                \includegraphics[width = \linewidth]{images/audio_powers_brute_force.png}
+            \end{center}
+            \item \texttt{temporal\_diff:}
+             \begin{center}
+                \includegraphics[width = \linewidth]{images/temporal_diff_brute_force.png}
+            \end{center}
+            
+        \end{enumerate}
+        \item \textbf{Signature Pipeline Results:}\begin{enumerate}
+            \item \texttt{audio\_powers:}
+            \begin{center}
+                \includegraphics[width = \linewidth]{images/audio_powers_signatures.png}
+            \end{center}
+            \item \texttt{temporal\_diff:}          \begin{center}
+                \includegraphics[width = \linewidth]{images/signatures_temporal_diff.png}
+            \end{center}
+        \end{enumerate}
+    \end{enumerate}
+
+\subsection*{Demonstration of Multimodal Signature Query - MFCC and Color Histograms}
+\begin{center}
+        \begin{center}
+                \includegraphics[width = \linewidth]{images/multimodal_query.png}
+            \end{center}
+\end{center}
+\subsection*{Conclusions from the data}
+\tab The results from the experimental queries showcase the potential of our innovation and how the assumptions of the experiment got in their way. \\ \tab Speedup from the signatures is always noticeable, both for visual and audio features, but much more for the former. Visual features, due to being more computationally intensive seem to benefit far more from the pre-computed signatures, often outputting a result more than twice as fast. Audio features on the other hand still have a speedup, but nowhere near as substantial. This most likely attributes itself to the fact that they work in fewer dimensions and that audio computations are faster in general. \\
+\tab Where the pipeline fails, however, is in the actual accuracy of each query. The assumption of perfect localization did not seem to hold up in most situations as much as was expected. Instead, the only time the queries got optimal results was when querying actual database videos, The query (even the brute-force version) sometimes fails to find even the exact matches of the video given to it. However, the cases where the signature pipeline failed seemed to coincide with the times the brute force pipeline failed as well. \\
+\tab This means the accuracy issues are most likely due to improper assumptions about the input data, rather than any substaintial difference between the two pipelines. In the case the brute-force pipeline found the correct match in the top-k results, it was also found by the signature pipeline. The speed improvements also held up in every run. Thus, once the pipeline assumptions are cleared up and combining the signatures with a proper localization pipeline should yield even better results.
+
+\section*{Issues Encountered During the Project } \tab The team faced lots of challenges in the process, mainly in data pre-processing and the actual brute-force pipeline. Running an input video on such a huge database, combined with the intensity of each computation limited the number of iterations and testing possible. At many points, the team was not sure whether problems in the output were the result of hard query videos or implementation issues. The way the team tried to remedy was by runnning the pipeline on input videos from the actual database. \\ \tab Another issue encountered was the normalization of the data. Some features have different scales and cannot be directly compared with each other, and thus they will be weighted differently. The way the team tried to remedy this was through normalization functions. 
+
+\section*{Future Improvements} \tab The system has a lot of room for growth. Were it not for the time constraints of the experiment, more would have been done and improved. Currently, setting up the database takes up a lot of effort and the overall result is still slow. Additionally, there is an undeniable loss in the accuracy, as seen by the evaluation results. 
+\\\tab A way to improve the accuracy would be building a tree-like structure for each signature. Currently, the system only has a signature for each 5-second segment (where 5 is in the end just an arbitrary number that was thought reasonable). What about the queries between those segments? As was seen in the evaluation results, the system has a harder time recognizing videos for videos spanning multiple signatures. The way the system can remedy this could be adding more segments, e.g. for each 10-seconds, or 20-seconds until it reaches the duration of the entire video. This tree would also be able to grow downward for higher accuracy, creating 2.5-second, 1.25-second and shorter segments. In theory, this should improve the accuracy of the pipeline even more by sacrificing a bit of speed. However, due to the time constraints of the project, this has not been tested yet.\\
+\tab Another possible improvement would be more efficient storing of the data. Currently, all signatures are stored as NumPy arrays in \texttt{.txt}. This makes the size of the system larger than desired, an issue that might get worse by adding more data and/or building a tree as mentioned in the previous improvement. If the data could be directly stored as bytes, it would likely take up far less space.
+
+\section*{Conclusion}
+\tab The system manages to achieve a substantial computational improvement despite the setbacks in accuracy. Hindrances from extensive assumptions aside, the queries are faster and still accurate (when given optimum conditions), thus confirming that there is ground for the initial hypothesis. With future improvements and combining it with an actual localization pipeline, this innovation may end up practically useful in many settings similar to Video Shazam.
     
 
 \end{document}
