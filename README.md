@@ -1,5 +1,5 @@
 ## Setting up the database
-All of the database videos (in the '/videos' folder) and signatures should already be in the actual repository. In the case there are issues with the database, one can simply run the `Database.py` script, ensuring `refresh_database = True`.
+All of the database signatures and the cropped videos should already be in the actual repository. The folder 'videos', however is empty, due to the size of the submission. Please download the videos in the same format as in the Student Video Collection provided for the lab. Please ensure there is no 'test' folder inside. An example of the way we have set it up is on github (https://github.com/vdakov/video-shazam-signature-queries/tree/main/videos). In the case there are issues with the database, one can simply run the `Database.py` script, ensuring `refresh_database = True`.
 
 ```css
 py Database.py
