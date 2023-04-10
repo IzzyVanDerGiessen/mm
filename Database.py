@@ -16,6 +16,7 @@ def createDirectories(videos_folder, cropped_videos=False):
             continue
         print(video)
 
+
         if cropped_videos:
             spl = video.split("_from_")
             video_name = spl[0]
@@ -26,6 +27,7 @@ def createDirectories(videos_folder, cropped_videos=False):
 
         video_path = videos_folder + video
         frames = getVideoFrames(video_path)
+
         for sign_type in sign_types:
             if not os.path.exists(PATH + sign_type):
                 os.makedirs(PATH + sign_type)
@@ -37,25 +39,15 @@ def createDirectories(videos_folder, cropped_videos=False):
 
             match sign_type:
                 case "colorhists" :
-
                     signature = sign_methods[sign_type](frames)
 
                 case "mfccs":
-
-                    #audio, sample_rate = librosa.load(video_path.split('.mp4')[0] + ".wav")
-                    if '.avi' in video_path:
-                        audio, sample_rate = librosa.load(video_path.split('.avi')[0] + ".wav")
-                    else:
-                        audio, sample_rate = librosa.load(video_path.split('.mp4')[0] + ".wav")
+                    audio, sample_rate = librosa.load(video_path[:-4] + ".wav")
                     signature = sign_methods[sign_type](audio, sample_rate)
 
                 case "audio_powers":
-                    audio, samplerate = None, None
-                    if '.avi' in video_path:
-                        audio, samplerate = librosa.load(video_path.split('.avi')[0] + ".wav")
-                    else:
-                        audio, samplerate = librosa.load(video_path.split('.mp4')[0] + ".wav")
-                    signature = sign_methods[sign_type](samplerate, audio, len(frames))
+                    audio, sample_rate = librosa.load(video_path[:-4] + ".wav")
+                    signature = sign_methods[sign_type](sample_rate, audio, len(frames))
 
                 case "temporal_diff":
                     signature = sign_methods[sign_type](frames)
@@ -65,9 +57,10 @@ def createDirectories(videos_folder, cropped_videos=False):
                     print("An error in the matching occured :)")
                     return -1
 
-            f = open(data_path + "/" + segment_name + ".txt", "wb")
-            f.write(signature.tobytes())
-            f.close()
+            # f = open(data_path + "/" + segment_name + ".txt", "wb")
+            # f.write(signature.tobytes())
+            # f.close()
+            np.savetxt(data_path + "/" + segment_name + ".txt", signature)
 
 
 full_signs = {}
@@ -81,11 +74,12 @@ def loadFullVideos():
             sign_file = PATH + sign_method + "/" + video[:-4] + "/full.txt"
 
             try:
-                with open(sign_file, "rb") as f:
-                    compare_sign_bts = f.read()
-                    compare_sign = np.frombuffer(compare_sign_bts, dtype=np.float32)
-                    print(compare_sign.shape)
-                    full_signs[video[:-4]][sign_method] = compare_sign
+                # with open(sign_file, "rb") as f:
+                #     compare_sign_bts = f.read()
+                #     compare_sign = np.frombuffer(compare_sign_bts, dtype=np.float32)
+                #     full_signs[video[:-4]][sign_method] = compare_sign
+                full_signs[video[:-4]][sign_method] = np.loadtxt(sign_file)
+                
             except:
                 print(sign_file)
 
@@ -105,11 +99,13 @@ def loadCroppedVideos():
             sign_file = PATH + sign_method + "/" + video_name + "/" + segment_name + ".txt"
             # Some cropped videos have only a .wav file and not .mp4
             try:
-                with open(sign_file, "rb") as f:
-                    compare_sign_bts = f.read()
-                    compare_sign = np.frombuffer(compare_sign_bts)
+                # with open(sign_file, "rb") as f:
+                #     compare_sign_bts = f.read()
+                #     compare_sign = np.frombuffer(compare_sign_bts)
 
-                    cropped_signs[video_name][sign_method].append(compare_sign)
+                #     cropped_signs[video_name][sign_method].append(compare_sign)
+                compare_sign = np.loadtxt(sign_file)
+                cropped_signs[video_name][sign_method].append(compare_sign)
             except:
                 continue
 

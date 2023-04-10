@@ -6,7 +6,8 @@ import sys
 import pims
 
 database_path = "database/signatures/"
-sign_types = ["colorhists", "mfccs", "temporal_diff", "audio_powers"]
+sign_types = ["mfccs"]
+# sign_types = ["colorhists", "mfccs", "temporal_diff", "audio_powers"]
 #sign_types = ["colorhists"]
 
 def colorhist(frames):
@@ -25,8 +26,7 @@ def colorhist(frames):
 
 def mfccs(audio, samplerate):
     # library implementation, idk what else to use tbh
-    features = librosa.feature.mfcc(y=audio, sr=samplerate, n_mfcc=13, n_fft=512)
-    print(features.shape)
+    features = librosa.feature.mfcc(y=audio, sr=samplerate, n_mfcc=13, n_fft=512, n_mels = 32)
     return features
 
 
